@@ -1,0 +1,18 @@
+# file: OsmServerPrivUsers
+# date: 12-02-2014
+#
+# This file contains the rules to allow or deny
+# elevated privileges for specific groups of users.
+#
+# NOTE: this uses the White/Black/File syntax
+#       to create the rule set
+#    -  if the White list is empty, all are accepted
+#    -  if the Black list is empty, everything is rejected
+#          unless it is contained in the White list
+#    -  therefore if both are empty, all are accepted
+#
+* White (accept)
+linuxdev
+
+
+

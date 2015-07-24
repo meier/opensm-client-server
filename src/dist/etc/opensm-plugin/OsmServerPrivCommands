@@ -1,0 +1,34 @@
+# file: OsmServerPrivCommands
+# date: 1-29-2015
+#
+# This file contains the rules to allow or deny
+# specific shell commands.
+#
+# NOTE: this uses the White/Black/File syntax
+#       to create the rule set
+#    -  if the White list is empty, all are accepted
+#    -  if the Black list is empty, everything is rejected
+#          unless it is contained in the White list
+#    -  therefore if both are empty, all are accepted
+#
+* White (accept)
+ibportstate
+perfquery
+pwd
+date
+hostname
+echo
+#
+# Native Commands (performed by OpenSM)
+#   (refer to OsmNativeCommand.java)
+#
+native-echo    
+light-sweep    
+heavy-sweep    
+reroute   
+loglevel    
+update-desc    
+psweep  
+psweep-period    
+clear-counters    
+

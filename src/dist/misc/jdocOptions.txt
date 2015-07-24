@@ -1,0 +1,15 @@
+# generates the javadocs for the OpenSM Java Plugin Client/Server Project
+#
+# invoked from within the opensm-client-server/misc directory
+#
+# tam 7-11-2012
+#
+-windowtitle "OpenSM Monitoring Service API Specification"
+-header '<b>OSM Monitoring Service </b><br><font size="-1">v1.0</font>'
+-bottom '<font size="-1"><a href="https://chaos.llnl.gov/bugzilla/">Submit a bug or feature</a><br><br>Java is a trademark or registered trademark of Oracle and/or its affiliates. in the US and other countries.<br>Copyright 1993-1999 Oracle and/or its affiliates. 901 San Antonio Road,<br>Palo Alto, California, 94303, U.S.A. All rights reserved.</font>'
+-doctitle '"OpenSM Monitoring Service<sup><font size="-2">TM</font></sup>v1.0 API Specification"'
+-sourcepath "./../ldapotp-java-api/src:./src:./../lc-jsecure-client-server/src:./../lc-jcommon/src:./../opensm-client-tools/src"
+-overview "./src/overview.html"
+-d "./docs"
+-use
+-splitIndex

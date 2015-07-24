@@ -1,0 +1,15 @@
+gov.llnl.lc.stg.ldapotp
+gov.llnl.lc.net
+gov.llnl.lc.time
+gov.llnl.lc.logging
+gov.llnl.lc.parser
+gov.llnl.lc.search
+gov.llnl.lc.util
+gov.llnl.lc.security
+gov.llnl.lc.infiniband.opensm.plugin
+gov.llnl.lc.infiniband.core
+gov.llnl.lc.infiniband.opensm.plugin.data
+gov.llnl.lc.infiniband.opensm.plugin.event
+gov.llnl.lc.infiniband.opensm.plugin.net
+gov.llnl.lc.infiniband.opensm.plugin.search
+gov.llnl.lc.meier3.opensm.test
