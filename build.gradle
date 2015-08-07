@@ -184,7 +184,7 @@ task fatJar(type: Jar, dependsOn: classes) {
 
 javadoc {
      options.addStringOption('windowtitle',  'OpenSM Monitoring Service API Specification')
-     options.addStringOption('header',  '<b>OSM Monitoring Service </b><br><font size="-1">v2.0</font>')
+     options.addStringOption('header',  '<b>OSM Monitoring Service</b><br><font size="-1">v2.0</font>')
      options.addStringOption('bottom',  '<font size="-1"><a href="https://github.com/meier/opensm-client-server/issues/">Submit a bug or feature</a><br><br>Java is a trademark or registered trademark of Oracle and/or its affiliates. in the US and other countries.<br>Copyright 1993-1999 Oracle and/or its affiliates. 901 San Antonio Road,<br>Palo Alto, California, 94303, U.S.A. All rights reserved.</font>')
      options.addStringOption('doctitle',  '"OpenSM Monitoring Service<sup><font size="-2">TM</font></sup>v2.0 API Specification"')
      options.addStringOption('overview',  'src/main/java/overview.html')
