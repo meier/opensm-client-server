@@ -9,6 +9,7 @@ apply plugin: 'java'
 
 def mainClass  = "gov.llnl.lc.infiniband.opensm.plugin.test.OsmServiceStatus"
 def bundleDescription = "Java Client and Server library for OpenSM - OMS"
+def userJarRepo = System.getProperty('user.home') + '/jarRepo'
 
 // In this section you declare where to find the dependencies of your project
 // and in this case, all subprojects should be at the same level as this
@@ -21,7 +22,7 @@ repositories {
         dirs '../lc-jcommon/build/distributions/'
         dirs '../ldapotp-java-api/build/distributions/'
         dirs '../lc-jsecure-client-server/build/distributions/'
-        dirs '/home/meier3/jarRepo/gitOmsJars/'
+        dirs userJarRepo + '/gitOmsJars/'
    }
 }
 
