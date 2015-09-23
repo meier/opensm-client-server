@@ -213,7 +213,10 @@ public class IB_Link  implements Serializable, CommonLogger, Comparable<IB_Link>
  // current speed is the lowest speed of the two endpoints
 //    return "E1 (" + Endpoint1.getSpeedString() + "), E2 (" + Endpoint2.getSpeedString() + ")";
     if((Endpoint1 == null) || (Endpoint2 == null) || (Endpoint1.getSpeed() == null) || (Endpoint2.getSpeed() == null))
+    {
+      logger.severe("Unable to determine the link speed (invalid port??");
       return OSM_LinkSpeed.UNKNOWN;
+    }
     
     // compare the speed numbers
     if(Endpoint1.getSpeed().getSpeed() > Endpoint2.getSpeed().getSpeed())

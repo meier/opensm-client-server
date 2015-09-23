@@ -103,13 +103,15 @@ public enum OSM_LinkRate
   FIVE12(      324, OSM_LinkWidth.TWELVE_X, OSM_LinkSpeed.FIVE,       OSM_RateNames.SIXTY.getRateName()),
   TEN12(       348, OSM_LinkWidth.TWELVE_X, OSM_LinkSpeed.TEN,        OSM_RateNames.ONE_TWENTY.getRateName()),
   FOURTEEN12(  372, OSM_LinkWidth.TWELVE_X, OSM_LinkSpeed.FOURTEEN,   OSM_RateNames.ONE_SIX_EIGHT.getRateName()),
-  TWENTYFIVE12(384, OSM_LinkWidth.TWELVE_X, OSM_LinkSpeed.TWENTYFIVE, OSM_RateNames.THREE_HUNDRED.getRateName());
+  TWENTYFIVE12(384, OSM_LinkWidth.TWELVE_X, OSM_LinkSpeed.TWENTYFIVE, OSM_RateNames.THREE_HUNDRED.getRateName()),
+  
+  DONOTKNOW(-1, OSM_LinkWidth.UNKNOWN, OSM_LinkSpeed.UNKNOWN, OSM_RateNames.UNKNOWN_RATE.getRateName());
 
   /* following v1 ver1.2 p901 */
 //  #define IB_PATH_RECORD_RATE_2_5_GBS   2
 //  #define IB_PATH_RECORD_RATE_10_GBS    3
 //  #define IB_PATH_RECORD_RATE_30_GBS    4
-//  #define IB_PATH_RECORD_RATE_5_GBS   5
+//  #define IB_PATH_RECORD_RATE_5_GBS     5
 //  #define IB_PATH_RECORD_RATE_20_GBS    6
 //  #define IB_PATH_RECORD_RATE_40_GBS    7
 //  #define IB_PATH_RECORD_RATE_60_GBS    8
@@ -146,7 +148,8 @@ public enum OSM_LinkRate
     ONE_TWENTY(    120000, "120 Gb/s"),
     ONE_SIX_EIGHT( 168000, "168 Gb/s"),
     TWO_HUNDRED(   200000, "200 Gb/s"),
-    THREE_HUNDRED( 300000, "300 Gb/s");
+    THREE_HUNDRED( 300000, "300 Gb/s"),
+    UNKNOWN_RATE( -1, "UNKNOWN");
     
     public static final EnumSet<OSM_RateNames> OSMLINK_ALL_RATE_NAMES    = EnumSet.allOf(OSM_RateNames.class);
     private static final Map<Integer,OSM_RateNames> lookup = new HashMap<Integer,OSM_RateNames>();
@@ -275,8 +278,13 @@ protected int getRateNameNum()
 }
 
 public static OSM_LinkRate get(int Rate_num)
-{ 
-    return lookup.get(Rate_num); 
+{
+	// if not found in the lookup table, return UNKNOWN
+	OSM_LinkRate lr = lookup.get(Rate_num);
+	if(lr != null)
+		return lr;
+	System.err.println("UNKNOWN Link Rate: " + Rate_num);
+    return lookup.get(-1); 
 }
 
 public static OSM_LinkRate get(IB_Link link)
@@ -288,7 +296,13 @@ public static OSM_LinkRate get(IB_Link link)
   // this is how the numbers in the enum were calculated, so do it now to lookup the rate for this port
   int lookup_number = (link.getSpeed().getSpeed() * (link.getWidth().getMultiplier())) + link.getWidth().getOffset();
   
-  return get(lookup_number);
+  OSM_LinkRate lr = get(lookup_number);
+  if(lr == DONOTKNOW)
+  {
+	  System.err.println("Speed: " + link.getSpeed().getSpeed());
+	  System.err.println("Width M: " + link.getWidth().getMultiplier() + ", O: " + link.getWidth().getOffset());
+  }
+  return lr;
 }
 
 public static OSM_LinkRate get(OSM_Port port)
@@ -312,14 +326,24 @@ public static OSM_LinkRate get(SBN_PortInfo portInfo, MLX_ExtPortInfo extPortInf
     return ZERO;
   
   // the LinkRate is derived from the LinkSpeed and the LinkWidth
+  int speed  = OSM_LinkSpeed.get(portInfo, extPortInfo).getSpeed();
+  int widthM = OSM_LinkWidth.get(portInfo).getMultiplier();
+  int widthO = OSM_LinkWidth.get(portInfo).getOffset();
   
-  // if the OSM_LinkSpeed is implemented correctly, shouldn't need this here
-  int extended = portInfo.capability_mask & IB_PORT_CAP_HAS_EXT_SPEEDS;
-
+  
   // this is how the numbers in the enum were calculated, so do it now to lookup the rate for this port
   int lookup_number = (OSM_LinkSpeed.get(portInfo, extPortInfo).getSpeed() * (OSM_LinkWidth.get(portInfo).getMultiplier())) + OSM_LinkWidth.get(portInfo).getOffset();
   
-  return get(lookup_number);
+//  return get(lookup_number);
+  
+  OSM_LinkRate lr = get(lookup_number);
+  if(lr == DONOTKNOW)
+  {
+    System.err.println("lookup number is: " + lookup_number);
+    System.err.println("Speed: " + speed);
+	  System.err.println("Width M: " + widthM + ", O: " + widthO);
+  }
+  return lr;
 }
 
 public int compareAgainst(OSM_LinkRate lr2)

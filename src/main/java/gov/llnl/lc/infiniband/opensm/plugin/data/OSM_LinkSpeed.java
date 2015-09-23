@@ -93,8 +93,12 @@ public enum OSM_LinkSpeed implements CommonLogger
   // FDR10 is out of order,  Where does EDR go, and what do I do
   // with STD, & QM??
   
-public static final short FDR10_MASK   =   0x01;
+public static final short FDR10_MASK                 =       0x01;
+public static final int   IB_PORT_CAP_HAS_EXT_SPEEDS = 0x00004000;
+
 //  #define FDR10 0x01
+//  #define IB_PORT_CAP_HAS_EXT_SPEEDS  (CL_HTON32(0x00004000))
+
 public static final short IB_PORT_LINK_SPEED_SHIFT          = 4;
 public static final short IB_PORT_LINK_SPEED_SUPPORTED_MASK = 0xF0;
 public static final short IB_PORT_LINK_SPEED_ACTIVE_MASK    = 0xF0;
@@ -263,23 +267,38 @@ public static OSM_LinkSpeed get(SBN_PortInfo portInfo, MLX_ExtPortInfo extPortIn
   // get the speed from the portinfo object
   short ls = portInfo.link_speed;
   short link_speed_active     = (short) ((portInfo.link_speed & IB_PORT_LINK_SPEED_ACTIVE_MASK) >> IB_PORT_LINK_SPEED_SHIFT);
+  short link_speed_ext_active = (short) ((portInfo.link_speed_ext & IB_PORT_LINK_SPEED_ACTIVE_MASK) >> IB_PORT_LINK_SPEED_SHIFT);
   
-  // are we using some sort of extended speed mode?
-  boolean link_speed_extended = (portInfo.link_speed_ext_enabled != 0);
+  boolean port_speed_extended = ((portInfo.capability_mask & IB_PORT_CAP_HAS_EXT_SPEEDS) != 0);
+  boolean  link_speed_extended = (portInfo.link_speed_ext_enabled != 0);
+  
+  // ports have capabilities which may not be active, such as extended speeds
+  //  check to see if the extended speed is active, and use it if so
+  //  otherwise, use the normal link speed
   
   // if so, override the previous link speed with the new one
   if(link_speed_extended)
   {
-    // portInfo.link_speed_ext; == 1  is QDR
-    if(portInfo.link_speed_ext == 1)
-      return OSM_LinkSpeed.TEN;
- 
     // portInfo.link_speed_ext; == 17  is FDR
     if(portInfo.link_speed_ext == 17)
       return OSM_LinkSpeed.FOURTEEN;
     
-    logger.severe("Unknown Extended Link Speed: " + portInfo.link_speed_ext);
-    return OSM_LinkSpeed.QM;
+    // portInfo.link_speed_ext; == 1  is QDR
+    if(portInfo.link_speed_ext == 1)
+      return OSM_LinkSpeed.TEN;
+    
+    // either FDR or QDR
+    if((extPortInfo.link_speed_active & FDR10_MASK) != 0)
+      return OSM_LinkSpeed.FOURTEEN;
+    return OSM_LinkSpeed.TEN;
+ 
+//    logger.severe("Unknown Extended Link Speed1: " + portInfo.link_speed_ext);
+//    logger.severe("Unknown Extended Link Speed2: " + extPortInfo.link_speed_active);
+//    logger.severe("Unknown Extended Link Speed3: " + extPortInfo.link_speed_enabled);
+//    logger.severe("Unknown Extended Link Speed4: " + extPortInfo.link_speed_supported);
+//    logger.severe("I think its lid is: " + portInfo.master_sm_base_lid);
+//    logger.severe("I think its base lid is: " + portInfo.base_lid);
+//    return OSM_LinkSpeed.QM;
   }
   
   
@@ -294,7 +313,14 @@ public static OSM_LinkSpeed get(SBN_PortInfo portInfo, MLX_ExtPortInfo extPortIn
   
 //  if (link_speed_active > IB_LINK_SPEED_ACTIVE_10)
 //        return OSM_LinkSpeed.QM;
-  
+
+  if(port_speed_extended)
+{
+//  System.err.println("Port Speed Extended:       (" + port_speed_extended + ")");
+//  System.err.println("Extended Speed value1: (" + link_speed_ext_active + ")");
+//  System.err.println("Normal   Speed value2: (" + link_speed_active + ")");
+  return OSM_LinkSpeed.get(link_speed_active);  // currently, this would fall through anyway, not necessary
+}
   
   return OSM_LinkSpeed.get(link_speed_active);
 //

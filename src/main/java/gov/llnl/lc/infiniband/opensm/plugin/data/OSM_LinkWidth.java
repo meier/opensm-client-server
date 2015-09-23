@@ -78,7 +78,7 @@ public enum OSM_LinkWidth
   FOUR_X(    2, 4,  100, "4x"),
   EIGHT_X(   4, 8,  200, "8x"),
   TWELVE_X(  8, 12, 300, "12x"),
-  UNKNOWN(   0, 1,  500, "Unknown");
+  UNKNOWN(   0, 1,    0, "1x");   // default to 1x if not known
   
 //  fprintf(file, "PHY=%s LOG=%s SPD=%s\n",
 //      p_physp->port_info.link_width_active == 1 ? "1x" :

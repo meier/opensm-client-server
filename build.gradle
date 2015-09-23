@@ -19,8 +19,8 @@ repositories {
     // location of my jars
        flatDir {
         dirs '../curses-java-api/build/distributions/'
-        dirs '../lc-jcommon/build/distributions/'
-        dirs '../ldapotp-java-api/build/distributions/'
+        dirs '../ldapotp-java-api/build/dist/libs'
+        dirs '../ldapotp-java-api/build/dist/'
         dirs '../lc-jsecure-client-server/build/distributions/'
         dirs userJarRepo + '/gitOmsJars/'
    }

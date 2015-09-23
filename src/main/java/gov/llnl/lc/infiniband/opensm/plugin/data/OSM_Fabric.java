@@ -69,6 +69,7 @@ import gov.llnl.lc.infiniband.opensm.xml.IB_FabricConf;
 import gov.llnl.lc.infiniband.opensm.xml.IB_LinkListElement;
 import gov.llnl.lc.infiniband.opensm.xml.IB_PortElement;
 import gov.llnl.lc.time.TimeStamp;
+import gov.llnl.lc.util.BinList;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -78,6 +79,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
@@ -144,6 +146,9 @@ private LinkedHashMap<String, OSM_Port> portsAll  = new LinkedHashMap<String, OS
 
 /* keyed off port guid+port_num of endpoint 1 */
 private LinkedHashMap<String, IB_Link>  linksAll  = new LinkedHashMap<String, IB_Link>();
+
+/* keyed off sys guid (core switches contain system guids) */
+private BinList <IB_Guid> systemGuidBins = new BinList <IB_Guid>();
 
 /* the primary subnet manager */
 private OSM_Node ManagementNode;
@@ -284,6 +289,14 @@ private OSM_Node ManagementNode;
       logger.severe("createIB_Links() threw an exception, I think its a null pointer");
       logger.severe("The size of the links is " + getIB_Links().size());
     }
+    
+    // create "system guid bins", by looking through all the switch nodes
+    // and organizing them based on a common sys_guid
+    status &= createSystemGuidBins(true);
+    if (!status)
+        logger.severe("error creating system guid bins");
+      logger.info("done creating system guid bins, moving on");
+    
 
     // ***** IMPORTANT TIMESTAMP is based on perfmgr *****
     // conditionally update the timestamp based on the performance counters
@@ -843,6 +856,42 @@ private OSM_Node ManagementNode;
     return (guid == null) ? null: getOSM_Node(guid.toColonString());
   }
   
+  public BinList <IB_Guid> getSystemGuidBins()
+  {
+    if((systemGuidBins == null) || (systemGuidBins.isEmpty()))
+        createSystemGuidBins(true);
+    return systemGuidBins;
+  }
+  
+  public ArrayList<IB_Guid> getNodeGuidsForSystemGuid(String SystemKey)
+  {
+    BinList <IB_Guid> bins = getSystemGuidBins();
+    if(bins == null)
+    {
+      System.err.println("There are no system image guids");
+      System.exit(0);
+    }
+    return bins.getBin(SystemKey);
+  }
+  
+  /************************************************************
+   * Method Name:
+   *  getNodeGuidsForSystemGuid
+  **/
+  /**
+   * Return an array list of node guids associated with the provided
+   * system image guid.  
+   * 
+   *
+   * @param systemGuid  the system image guid
+   * @return  an array list of node guids associated the the provided
+   *          system guid
+   ***********************************************************/
+  public ArrayList<IB_Guid> getNodeGuidsForSystemGuid(IB_Guid systemGuid)
+  {
+    return (systemGuid == null) ? null: getNodeGuidsForSystemGuid(systemGuid.toColonString());
+  }
+  
   private OSM_Node initManagementNode()
   {
     // The guid of the Subnet Manager is sometimes the node guid, and
@@ -1091,50 +1140,96 @@ private OSM_Node ManagementNode;
 
   
   private boolean createOSM_Nodes()
+  {
+    // create the hashmap, using the colon delimined guid string a a key
+    if (osmNodes != null)
     {
-      // create the hashmap, using the colon delimined guid string a a key
-      if (osmNodes != null)
+      // always require subnNodes, but PerfMgrNodes are optional
+      if((osmNodes != null) && (osmNodes.getSubnNodes() != null) && (osmNodes.getSubnNodes().length > 1))
       {
-        // always require subnNodes, but PerfMgrNodes are optional
-        if((osmNodes != null) && (osmNodes.getSubnNodes() != null) && (osmNodes.getSubnNodes().length > 1))
+        PFM_Node[] pnodes = osmNodes.getPerfMgrNodes();
+        SBN_Node[] snodes = osmNodes.getSubnNodes();
+        
+        if(((pnodes != null) && (pnodes.length > 1)))
         {
-          PFM_Node[] pnodes = osmNodes.getPerfMgrNodes();
-          SBN_Node[] snodes = osmNodes.getSubnNodes();
-          
-          if(((pnodes != null) && (pnodes.length > 1)))
+          boolean matched = false;
+          // asked to return something, so try to match up the two types of nodes
+          for(SBN_Node s: snodes)
           {
-            boolean matched = false;
-            // asked to return something, so try to match up the two types of nodes
-            for(SBN_Node s: snodes)
+            matched = false;
+            for(PFM_Node p: pnodes)
             {
-              matched = false;
-              for(PFM_Node p: pnodes)
+              if(s.getNodeGuid().equals(p.getNodeGuid()))
               {
-                if(s.getNodeGuid().equals(p.getNodeGuid()))
-                {
-                  OSM_Node n = new OSM_Node(p,s);
-                  nodesAll.put(getOSM_NodeKey(n), n);
-                  matched = true;
-                  break;
-                }
-              }
-              if(!matched)
-              {
-                System.err.println("Couldn't find a matching PFM_Node for " + s.getNodeGuid().toColonString());
-                System.err.println("Couldn't find a match PFM Node for " + s.description);
-                // consider creating a node without PFM_Node
-                OSM_Node n = new OSM_Node(s);
+                OSM_Node n = new OSM_Node(p,s);
                 nodesAll.put(getOSM_NodeKey(n), n);
+                matched = true;
+                break;
               }
             }
+            if(!matched)
+            {
+              System.err.println("Couldn't find a matching PFM_Node for " + s.getNodeGuid().toColonString());
+              System.err.println("Couldn't find a match PFM Node for " + s.description);
+              // consider creating a node without PFM_Node
+              OSM_Node n = new OSM_Node(s);
+              nodesAll.put(getOSM_NodeKey(n), n);
+            }
           }
-        }      
-        if((nodesAll != null) && (nodesAll.size() > 0))
-          return true;
-       }
-     return false;
-  }
+        }
+      }      
+      if((nodesAll != null) && (nodesAll.size() > 0))
+        return true;
+     }
+   return false;
+}
+  
+  public boolean createSystemGuidBins(boolean includeSingletons)
+  {
+    // key is the system image guid - must be different than the node guid, or I don't care
+    // value is a BinList of node guids (all the nodes that share this system image guid)
     
+    // create the bins, using the colon delimined guid string as a key
+    if((nodesAll != null) && (nodesAll.size() > 0))
+    {
+     BinList <IB_Guid> sBins = new BinList <IB_Guid>();
+
+     for(OSM_Node n: nodesAll.values())
+     {
+       // does this node have a system guid?
+    	 if(n.sbnNode.sys_guid > 1)
+    	 {
+    		// is the system guid different than the node guid
+    		if(n.sbnNode.sys_guid != n.sbnNode.node_guid)
+          sBins.add(n.getNodeGuid(), (new IB_Guid(n.sbnNode.sys_guid)).toColonString());
+ //       sBins.add(n.getNodeGuid(), Long.toString(n.sbnNode.sys_guid));
+    	 }
+     }
+     if(sBins != null)
+     {
+       // I only care about the system guid bin list that have more than one node guid in it
+       BinList <IB_Guid> gBins = new BinList <IB_Guid>();
+       for(String key: sBins.getKeys())
+       {
+         ArrayList <IB_Guid> o = sBins.getBin(key);
+         if((o.size() > 1) || (includeSingletons))
+         {
+//           System.err.println("Sys guid:  " + key + " has " + o.size() + " guids");
+           gBins.addBin(o, key);
+         }
+       }
+       if((gBins != null) && (gBins.size() > 0))
+       {        
+         systemGuidBins = gBins;
+//         System.err.println("There are " + systemGuidBins.size() + " systems, with the following sizes");
+//         System.err.println(systemGuidBins.toString());         
+       }
+     }
+     return true;
+   }
+   return false;
+  }
+  
     private boolean createIB_Links()
     {
       int badLinkCounter = 0;
@@ -1427,8 +1522,6 @@ private OSM_Node ManagementNode;
    return null;
  }
 
-
-    
     private static void putBoolean(HashMap<String, String> map, String key, boolean value)
     {
       // put only true
@@ -1466,6 +1559,7 @@ private OSM_Node ManagementNode;
     
     public LinkedHashMap<String, String> getOptions()
     {
+    	createSystemGuidBins(true);
       if(this.getOsmSubnet() == null)
         return null;
       return OSM_Fabric.getOtions(this.getOsmSubnet().Options);
