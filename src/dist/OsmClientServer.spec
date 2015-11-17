@@ -2,8 +2,8 @@
 %define osm_config_dir etc/opensm-plugin
 
 Name:           	opensm-client-server-java
-Version:        	2.0.0
-Release:        	65%{?dist}
+Version:        	2.00
+Release:        	67%{?dist}
 Summary:        	Java Client and Server library for OpenSM
 
 Group:          	Development/Libraries
@@ -16,8 +16,8 @@ BuildRequires:  	java-devel >= 1:1.6.0
 Requires:       	java >= 1:1.6.0
 Requires:       	llnl-ldapotp-clt-jni-auth-libs
 Requires:       	opensm-jni-plugin-libs
-Requires:       	llnl-ldapotp-clt-java >= 1.0.0-13
-BuildRequires:     	llnl-ldapotp-clt-java >= 1.0.0-13
+Requires:			llnl-ldapotp-clt-java >= 2.00-33
+BuildRequires:      llnl-ldapotp-clt-java >= 2.00-33
 BuildRequires:  	jpackage-utils
 BuildRequires:  	ant >= 1.6
 
@@ -88,6 +88,8 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed Nov 18 2015 Tim Meier <meier3@llnl.gov> 2.00-67
+- gradle build and different versioning scheme
 * Wed May 20 2015 Tim Meier <meier3@llnl.gov> 2.0.0-65
 - a variety of small improvements to support node position awareness
 - within the fabric (neighborhood)
