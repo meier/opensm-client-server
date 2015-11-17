@@ -30,23 +30,10 @@ clients.  This package also includes the necessary client interfaces and test
 applications for creating robust client applications that use the service.
 See /usr/share/java/OsmClientServer/bin/ for tools and sample clients.
 
-%package javadoc
-Summary:        Javadocs for %{java_package_name}
-Group:          Documentation
-Requires:       jpackage-utils
-
-%description javadoc
-This package contains the OpenSM Monitoring Service API specification, and the
-typical installation location is /usr/share/javadoc/OsmClientServer.  This
-documentation is in Javadoc style html, so you can simply point your browser
-at "file:///usr/share/javadoc/OsmClientServer/index.html".
-
-
 %prep
 %setup -q
 
 %build
-
 
 %install
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
@@ -61,10 +48,6 @@ ln -s %{java_package_name}-*.jar %{java_package_name}.jar
 mkdir -p $RPM_BUILD_ROOT/%{osm_config_dir}
 mv $RPM_BUILD_ROOT%{_javadir}/%{java_package_name}/%{osm_config_dir} $RPM_BUILD_ROOT/etc
 
-mkdir -p $RPM_BUILD_ROOT%{_javadocdir}
-mv $RPM_BUILD_ROOT%{_javadir}/%{java_package_name}/docs $RPM_BUILD_ROOT%{_javadocdir}/%{java_package_name}
-
-
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -78,14 +61,8 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(600,root,root,755)
 %config(noreplace) /%{osm_config_dir}/OsmServerPriv*
 
-
 %defattr(755,root,root,755)
 %{_javadir}/%{java_package_name}/bin/*
-
-%files javadoc
-%defattr(644,root,root,755)
-%{_javadocdir}/%{java_package_name}
-
 
 %changelog
 * Wed Nov 18 2015 Tim Meier <meier3@llnl.gov> 2.00-67
