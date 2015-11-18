@@ -3,7 +3,7 @@
 
 Name:           	opensm-client-server-java
 Version:        	2.00
-Release:        	67%{?dist}
+Release:        	69%{?dist}
 Summary:        	Java Client and Server library for OpenSM
 
 Group:          	Development/Libraries
@@ -65,8 +65,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_javadir}/%{java_package_name}/bin/*
 
 %changelog
-* Wed Nov 18 2015 Tim Meier <meier3@llnl.gov> 2.00-67
-- gradle build and different versioning scheme
+* Wed Nov 18 2015 Tim Meier <meier3@llnl.gov> 2.00-69
+- gradle build and different versioning scheme, fixed LcCommon
 * Wed May 20 2015 Tim Meier <meier3@llnl.gov> 2.0.0-65
 - a variety of small improvements to support node position awareness
 - within the fabric (neighborhood)
