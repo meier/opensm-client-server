@@ -2,7 +2,7 @@
 %define osm_config_dir etc/opensm-plugin
 
 Name:           	opensm-client-server-java
-Version:        	2.00
+Version:        	2.01
 Release:        	69%{?dist}
 Summary:        	Java Client and Server library for OpenSM
 
@@ -16,8 +16,8 @@ BuildRequires:  	java-devel >= 1:1.6.0
 Requires:       	java >= 1:1.6.0
 Requires:       	llnl-ldapotp-clt-jni-auth-libs
 Requires:       	opensm-jni-plugin-libs
-Requires:			llnl-ldapotp-clt-java >= 2.00-33
-BuildRequires:      llnl-ldapotp-clt-java >= 2.00-33
+Requires:			llnl-ldapotp-clt-java >= 2.01-35
+BuildRequires:      llnl-ldapotp-clt-java >= 2.01-35
 BuildRequires:  	jpackage-utils
 BuildRequires:  	ant >= 1.6
 
@@ -65,6 +65,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_javadir}/%{java_package_name}/bin/*
 
 %changelog
+* Thu Nov 19 2015 Tim Meier <meier3@llnl.gov> 2.01-69
+- version 2.01 release 69
 * Wed Nov 18 2015 Tim Meier <meier3@llnl.gov> 2.00-69
 - gradle build and different versioning scheme, fixed LcCommon
 * Wed May 20 2015 Tim Meier <meier3@llnl.gov> 2.0.0-65
