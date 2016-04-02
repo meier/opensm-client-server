@@ -57,6 +57,7 @@ package gov.llnl.lc.infiniband.opensm.plugin.net;
 
 import gov.llnl.lc.logging.CommonLogger;
 import gov.llnl.lc.net.AbstractObjectClientProtocol;
+import gov.llnl.lc.net.NetworkConstants;
 import gov.llnl.lc.net.NetworkProperties;
 import gov.llnl.lc.net.ObjectSession;
 import gov.llnl.lc.net.ObjectSessionInterface;
@@ -70,9 +71,15 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -111,7 +118,14 @@ public class OsmApiSession extends ObjectSessionInterface implements OsmSession,
   /* session and connection info */
   private SSLSocketFactory SocketFactory = null;
   private SSLSocket SslSocket = null;
+  
+  private SSLContext my_ctx;
+
+  private String[] my_ciphers;
+  private String[] my_protocols;
+  
   private String HostName = null;
+  private String dBugLevel = null;
   private int PortNum = 0;
   private int SocketTimeout = 0;
   private boolean Connected = false;
@@ -189,6 +203,7 @@ public class OsmApiSession extends ObjectSessionInterface implements OsmSession,
     String hostName = HostName == null ? prop.getHostName(): HostName;
     PortNum = PortNumber == null? prop.getPortNumber(): Integer.parseInt(PortNumber);
     SocketTimeout = prop.getSocketTimeout();
+    dBugLevel = prop.getDebugLevel();
 
     SSLSocket sslSock = null;
     boolean connected = false;
@@ -203,25 +218,63 @@ public class OsmApiSession extends ObjectSessionInterface implements OsmSession,
     {
       num_tries++;
       KeyStore ks = KeyStoreTools.getJKS_KeyStore(true, null);
-      SSLContext sslcontext = SSLContext.getInstance("TLS");
-      sslcontext.init(KeyStoreTools.getKeyManagers(true, ks, null), KeyStoreTools.getTrustManagers(ks), null);
-      SocketFactory = (SSLSocketFactory) sslcontext.getSocketFactory();
+      try
+      {
+        /*
+         *    Cipher suite = TLS_DHE_DSS_WITH_AES_128_CBC_SHA
+         *    Protocol = TLSv1
+         *
+         */
+        my_ctx = SSLContext.getInstance("TLS");
+        
+        my_protocols = GetProtocolList(my_ctx);
+        my_ciphers   = GetCipherList(my_ctx);
+
+        my_ctx.init(KeyStoreTools.getKeyManagers(true, ks, null), KeyStoreTools.getTrustManagers(ks), null);
+        
+        my_protocols = GetProtocolList(my_ctx);
+        my_ciphers   = GetCipherList(my_ctx);
+        if(NetworkConstants.NET_DEBUG_ALL_LEVEL.equals(dBugLevel))
+          printSSLContextInfo(my_ctx);
+
+        SocketFactory = (SSLSocketFactory) my_ctx.getSocketFactory();
+        if(NetworkConstants.NET_DEBUG_ALL_LEVEL.equals(dBugLevel))
+          printSocketFactoryInfo(SocketFactory);
+      }
+      catch (Exception e)
+      {
+        logger.severe("Unsuppored Operation getting socket factory: " + e.getMessage());
+        throw new IOException("Unsuppored Operation getting socket factory: " + e.getMessage());
+      }
 
       try
       {
         sslSock = (SSLSocket) SocketFactory.createSocket(hostName, PortNum);
+        
+        // make sure the socket is set up with the preferred cipher and protocol
+        sslSock.setEnabledProtocols(my_protocols);
+        sslSock.setEnabledCipherSuites(my_ciphers);
+        sslSock.setSoTimeout(SocketTimeout);
       }
       catch (IOException e)
       {
-        logger.severe("2Exception: " + e.getMessage());
-        logger.severe("Could not listen on port:" + PortNum);
-        throw new IOException("Could not listen on port:" + PortNum);
+        logger.severe("IOException: " + e.getMessage());
+        logger.severe("Could not set up SSL Socket on port:" + PortNum);
+        throw new IOException("Could not set up SSL Socket on port:" + PortNum);
+      }
+      catch (Exception e)
+      {
+        logger.severe("Exception: " + e.getMessage());
+        logger.severe("Unhandled exception setting up SSL Socket on port:" + PortNum);
+        throw new IOException("Unhandled exception setting up SSL Socket on port:" + PortNum);
       }
 
       try
       {
-        sslSock.setSoTimeout(SocketTimeout);
-        sslSock.startHandshake();
+        if(NetworkConstants.NET_DEBUG_ALL_LEVEL.equals(dBugLevel))
+          printSocketInfo(sslSock);
+        
+        sslSock.startHandshake();   // this will throw an exception if cipher and protocol not correct
         connected = true;
       }
       catch (SSLHandshakeException e)
@@ -231,9 +284,275 @@ public class OsmApiSession extends ObjectSessionInterface implements OsmSession,
         logger.severe("Assuming I need to install the host certificates ???? ");
         KeyStoreTools.installCerts(ks, HostName, null);
       }
+      catch (Exception e)
+      {        
+        /* the handshake failed, so the certs must need to be installed */
+        logger.severe("Could not complete SSL Handshake, invalid type??: " + e.getMessage());
+        throw new IOException("Could not complete SSL Handshake, invalid type??: " + e.getMessage());
+      }
+
     }
     return sslSock;
   }
+    
+    /************************************************************
+     * Method Name:
+     *  printSocketInfo
+    **/
+    /**
+     * A useful diagnostic when handshakes, authentication, or encryption
+     * between server and client (socket) can not be established.
+     *
+     * @see     describe related java objects
+     *
+     * @param socket
+     ***********************************************************/
+    private void printSocketInfo(SSLSocket socket)
+    {
+      System.out.println("Socket class: " + socket.getClass());
+      System.out.println("   Remote address = " + socket.getInetAddress().toString());
+      System.out.println("   Remote port = " + socket.getPort());
+      System.out.println("   Local socket address = " + socket.getLocalSocketAddress().toString());
+      System.out.println("   Local address = " + socket.getLocalAddress().toString());
+      System.out.println("   Local port = " + socket.getLocalPort());
+      System.out.println("   Need client authentication = " + socket.getNeedClientAuth());
+      SSLSession ss = socket.getSession();
+      System.out.println("   Cipher suite = " + ss.getCipherSuite());
+      System.out.println("   Protocol = " + ss.getProtocol());
+      System.out.println();
+      
+      String[] protocols = socket.getSupportedProtocols();
+
+//      System.out.println("Supported Protocols: " + protocols.length);
+//      for(int i = 0; i < protocols.length; i++)
+//      {
+//          System.out.println(" " + protocols[i]);
+//      }
+//
+      protocols = socket.getEnabledProtocols();
+
+      System.out.println("Enabled Protocols: " + protocols.length);
+      for(int i = 0; i < protocols.length; i++)
+      {
+          System.out.println(" " + protocols[i]);
+      }
+      
+      String[] ciphers = socket.getEnabledCipherSuites();
+      System.out.println("Enabled Ciphers: " + ciphers.length);
+      for(int i = 0; i < ciphers.length; i++)
+      {
+          System.out.println(" " + ciphers[i]);
+      }
+
+      Certificate[] serverCerts = null;
+
+      try 
+      {
+        serverCerts = socket.getSession().getPeerCertificates();
+      } catch (SSLPeerUnverifiedException ex)
+      {
+          ex.printStackTrace();
+      }
+      if(serverCerts != null)
+      {
+        System.out.println("Retreived Server's Certificate Chain");
+
+        System.out.println(serverCerts.length + ") Certifcates Found\n\n\n");
+        for (int i = 0; i < serverCerts.length; i++)
+        {
+            Certificate myCert = serverCerts[i];
+            System.out.println("====Certificate:" + (i + 1) + "====");
+            System.out.println("-Public Key-\n" + myCert.getPublicKey());
+            System.out.println("-Certificate Type-\n " + myCert.getType());
+
+            System.out.println();
+        }        
+      }
+      else
+      {
+        System.out.println("Could not retreive the Server's Certificate Chain");
+        
+      }
+  }
+    
+    private void printSocketFactoryInfo(SSLSocketFactory socketFactory)
+    {
+      System.out.println("SocketFactory class: " + socketFactory.getClass());
+      
+      String[] defaultCiphers   = socketFactory.getDefaultCipherSuites();
+      String[] supportedCiphers = socketFactory.getSupportedCipherSuites();
+      
+      for (int i = 0; i < defaultCiphers.length; i++)
+      {
+        System.out.println("====Default Cipher:" + (i + 1) + "====");
+        System.out.println(defaultCiphers[i]);
+        System.out.println();
+      }
+      
+      for (int i = 0; i < supportedCiphers.length; i++)
+      {
+        System.out.println("====Supported Cipher:" + (i + 1) + "====");
+        System.out.println(supportedCiphers[i]);
+        System.out.println();
+      }
+    }
+    
+    private void printSSLContextInfo(SSLContext m_ctx)
+    {
+      System.out.println("SSLContext class: " + m_ctx.getClass());
+      
+      String[] protocolList   = GetProtocolList(m_ctx);
+      
+      for (int i = 0; i < protocolList.length; i++)
+      {
+        System.out.println("====Protocols:" + (i + 1) + "====");
+        System.out.println(protocolList[i]);
+        System.out.println();
+      }
+      
+      String[] cipherList   = GetCipherList(m_ctx);
+      
+      for (int i = 0; i < cipherList.length; i++)
+      {
+        System.out.println("====Ciphers:" + (i + 1) + "====");
+        System.out.println(cipherList[i]);
+        System.out.println();
+      }
+    }
+    
+    protected String[] GetProtocolList(SSLContext m_ctx)
+    {
+        String[] preferredProtocols = { "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
+        String[] availableProtocols = null;
+
+        SSLSocket socket = null;
+
+        try
+        {
+            SSLSocketFactory factory = m_ctx.getSocketFactory();
+            socket = (SSLSocket)factory.createSocket();
+
+            availableProtocols = socket.getSupportedProtocols();
+            Arrays.sort(availableProtocols);
+        }
+        catch(Exception e)
+        {
+            return new String[]{ "TLSv1" };
+        }
+        finally
+        {
+            if(socket != null)
+              try
+              {
+                socket.close();
+              }
+              catch (IOException e)
+              {
+                e.printStackTrace();
+              }
+        }
+        
+        // return only the protocols both supported and preferred 
+        List<String> aa = new ArrayList<String>();
+        for(int i = 0; i < preferredProtocols.length; i++)
+        {
+            int idx = Arrays.binarySearch(availableProtocols, preferredProtocols[i]);
+            if(idx >= 0)
+                aa.add(preferredProtocols[i]);
+        }
+        return aa.toArray(new String[0]);
+    }
+    
+    protected String[] GetCipherList(SSLContext m_ctx)
+    {
+        String[] preferredCiphers = {
+
+            // *_CHACHA20_POLY1305 are 3x to 4x faster than existing cipher suites.
+            //   http://googleonlinesecurity.blogspot.com/2014/04/speeding-up-and-strengthening-https.html
+            // Use them if available. Normative names can be found at (TLS spec depends on IPSec spec):
+            //   http://tools.ietf.org/html/draft-nir-ipsecme-chacha20-poly1305-01
+            //   http://tools.ietf.org/html/draft-mavrogiannopoulos-chacha-tls-02
+            "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305",
+            "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305",
+            "TLS_ECDHE_ECDSA_WITH_CHACHA20_SHA",
+            "TLS_ECDHE_RSA_WITH_CHACHA20_SHA",
+
+            "TLS_DHE_RSA_WITH_CHACHA20_POLY1305",
+            "TLS_RSA_WITH_CHACHA20_POLY1305",
+            "TLS_DHE_RSA_WITH_CHACHA20_SHA",
+            "TLS_RSA_WITH_CHACHA20_SHA",
+
+            // Done with bleeding edge, back to TLS v1.2 and below
+            "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+            "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+            "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+            "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+            "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+            "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
+
+            // TLS v1.0 (with some SSLv3 interop)
+            "TLS_DHE_RSA_WITH_AES_256_CBC_SHA384",
+            "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
+            "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+            "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
+
+            "TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
+            "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
+            "SSL_DH_RSA_WITH_3DES_EDE_CBC_SHA",
+            "SSL_DH_DSS_WITH_3DES_EDE_CBC_SHA",
+
+            // RSA key transport sucks, but they are needed as a fallback.
+            // For example, microsoft.com fails under all versions of TLS
+            // if they are not included. If only TLS 1.0 is available at
+            // the client, then google.com will fail too. TLS v1.3 is
+            // trying to deprecate them, so it will be interesting to see
+            // what happens.
+            "TLS_RSA_WITH_AES_256_CBC_SHA256",
+            "TLS_RSA_WITH_AES_256_CBC_SHA",
+            "TLS_RSA_WITH_AES_128_CBC_SHA256",
+            "TLS_RSA_WITH_AES_128_CBC_SHA"
+        };
+
+        String[] availableCiphers = null;
+
+        try
+        {
+            SSLSocketFactory factory = m_ctx.getSocketFactory();
+            availableCiphers = factory.getSupportedCipherSuites();
+            Arrays.sort(availableCiphers);
+        }
+        catch(Exception e)
+        {
+            return new String[] {
+                "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
+                "TLS_DHE_DSS_WITH_AES_256_CBC_SHA",
+                "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+                "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
+                "TLS_RSA_WITH_AES_256_CBC_SHA256",
+                "TLS_RSA_WITH_AES_256_CBC_SHA",
+                "TLS_RSA_WITH_AES_128_CBC_SHA256",
+                "TLS_RSA_WITH_AES_128_CBC_SHA",
+                "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
+            };
+        }
+
+        // return only the ciphers both supported and preferred 
+        List<String> aa = new ArrayList<String>();
+        for(int i = 0; i < preferredCiphers.length; i++)
+        {
+            int idx = Arrays.binarySearch(availableCiphers, preferredCiphers[i]);
+            if(idx >= 0)
+                aa.add(preferredCiphers[i]);
+        }
+
+        aa.add("TLS_EMPTY_RENEGOTIATION_INFO_SCSV");
+
+        return aa.toArray(new String[0]);
+    }
+    
   
   /************************************************************
    * Method Name:
@@ -266,6 +585,7 @@ public class OsmApiSession extends ObjectSessionInterface implements OsmSession,
     try
     {
       SslSocket = getSSLSocket(HostName, PortNum);
+
       out = new PrintWriter(SslSocket.getOutputStream(), true);
       in = new BufferedReader(new InputStreamReader(SslSocket.getInputStream()));
       
@@ -281,6 +601,7 @@ public class OsmApiSession extends ObjectSessionInterface implements OsmSession,
     }
     catch (IOException e)
     {
+      logger.severe("Not catching this error?? - 111");
       logger.severe("IOException: " + HostName + " ; " + e.getMessage());
       logger.severe("Couldn't get I/O for the connection to: " + HostName);
       throw new IOException("Couldn't get I/O for the connection to: " + HostName);
@@ -438,7 +759,7 @@ public class OsmApiSession extends ObjectSessionInterface implements OsmSession,
   **/
   /**
    * Compares two sessions and returns 0 if some key
-   * attribures match.
+   * attributes match.
    *
    * @param   session to compare with
    *
