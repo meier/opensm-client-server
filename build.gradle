@@ -15,7 +15,7 @@ def bundleDescription = "Java Client and Server library for OpenSM - OMS"
 def userJarRepo = System.getProperty('user.home') + '/jarRepo'
 
 
-def specFileName = "${rootProject.name}" + ".spec"
+def specFileName = "opensm-client-server-java.spec"
 def distFileName = "opensm-client-server-java"
 def buildDist    = 'build/dist'
 def srcDist      = 'src/dist'
@@ -82,7 +82,7 @@ distributions {
         baseName = distFileName
          
         contents {
-//            from { 'src/dist/etc/' }
+            from { 'src/dist' }
             from { 'build/dist'}
          }
     }

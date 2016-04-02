@@ -1,6 +1,6 @@
 #!/bin/sh
 # file: oms-abstract
-# date: 10-21-2014 (tam)
+# date: 03-24-2016 (tam)
 #
 # generic convenience script for invoking OMS test clients
 # to personalize, see below;
@@ -18,15 +18,14 @@ JAVA_BIN=$JAVA_HOME/bin/java
 #                 /usr/lib/jvm/java-1.6.0-sun.x86_64/bin/jvisualvm
 #
 OCS_JARS=/usr/share/java/OsmClientServer
-LCC_JARS=/usr/share/java/JLdapOtpInterface
 MY_PROPS=/etc/opensm-plugin/OsmJClient.properties
 #
 # to personalize, copy this script, and modify the following
 #
 # MY_PROPS=~/JavaProperties/localhost/OsmJClient.properties
 #
-JAVA_OPTS="-XX:MaxPermSize=512m -Xmx2048m -Xms1024m"
-CMD_OPTS=" -classpath .:$OCS_JARS/*:$OCS_JARS/lib/*:$LCC_JARS/*:$LCC_JARS/lib/* -DNetworkProperties.file=$MY_PROPS -DKeyStoreProperties.file=$MY_PROPS -DAuthenticationProperties.file=$MY_PROPS -DAuthorizationProperties.file=$MY_PROPS -Djava.util.logging.config.file=$MY_PROPS"
+JAVA_OPTS="-Xmx2048m -Xms1024m"
+CMD_OPTS=" -classpath .:$OCS_JARS/*:$OCS_JARS/lib/* -DNetworkProperties.file=$MY_PROPS -DKeyStoreProperties.file=$MY_PROPS -DAuthenticationProperties.file=$MY_PROPS -DAuthorizationProperties.file=$MY_PROPS -Djava.util.logging.config.file=$MY_PROPS"
 #
 # typically, this script would be invoked by another script, which extends it
 # for a specific OMS command, for example;
