@@ -795,7 +795,7 @@ public class OMS_Collection implements Serializable, OsmConstants, gov.llnl.lc.l
    ***********************************************************/
   public OpenSmMonitorService put(String key, OpenSmMonitorService oms, boolean replace)
   {
-    if((oms != null) && (omsHistory != null))
+    if((oms != null) && (oms.getFabric() != null) && (omsHistory != null))
     {
       int prevSize = omsHistory.size();
       

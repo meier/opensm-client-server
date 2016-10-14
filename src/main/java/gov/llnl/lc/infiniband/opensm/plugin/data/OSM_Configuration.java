@@ -160,7 +160,7 @@ public class OSM_Configuration implements Serializable, OsmConstants, CommonLogg
         logger.severe(e.getMessage());
         logger.severe("Could not get an OSM_Configuration from the interface");
         logger.severe(SessionStatus.toString());
-        logger.severe("Returning NULL, nothing can be done without a connection");
+        logger.severe("Returning NULL, nothing can be done without a connection (could be a serialization error)");
       }
     }
     else

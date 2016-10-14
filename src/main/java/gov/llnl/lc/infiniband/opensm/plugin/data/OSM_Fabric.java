@@ -115,6 +115,15 @@ import java.util.concurrent.TimeUnit;
  * 
  * @version Feb 28, 2013 8:12:24 AM
  **********************************************************************/
+/**********************************************************************
+ * Describe purpose and responsibility of OSM_Fabric
+ * <p>
+ * @see  related classes and interfaces
+ *
+ * @author meier3
+ * 
+ * @version Jun 7, 2016 3:21:12 PM
+ **********************************************************************/
 public class OSM_Fabric implements Serializable, gov.llnl.lc.logging.CommonLogger
 {
   /**  describe serialVersionUID here **/
@@ -292,7 +301,7 @@ private OSM_Node ManagementNode;
     
     // create "system guid bins", by looking through all the switch nodes
     // and organizing them based on a common sys_guid
-    status &= createSystemGuidBins(true);
+    status &= createSystemGuidBins(false);
     if (!status)
         logger.severe("error creating system guid bins");
       logger.info("done creating system guid bins, moving on");
@@ -859,7 +868,7 @@ private OSM_Node ManagementNode;
   public BinList <IB_Guid> getSystemGuidBins()
   {
     if((systemGuidBins == null) || (systemGuidBins.isEmpty()))
-        createSystemGuidBins(true);
+        createSystemGuidBins(false);
     return systemGuidBins;
   }
   
@@ -1184,6 +1193,20 @@ private OSM_Node ManagementNode;
    return false;
 }
   
+  /************************************************************
+   * Method Name:
+   *  createSystemGuidBins
+  **/
+  /**
+   * Iterate through all the nodes in the fabric, and create Bins for
+   * all of the system guids, each bin will contain the switch node guid
+   * associated with the system guid.
+   *
+   * @see     describe related java objects
+   *
+   * @param includeSingletons  true, if the bins should include system guids with only a single switch guid
+   * @return
+   ***********************************************************/
   public boolean createSystemGuidBins(boolean includeSingletons)
   {
     // key is the system image guid - must be different than the node guid, or I don't care
@@ -1205,16 +1228,18 @@ private OSM_Node ManagementNode;
  //       sBins.add(n.getNodeGuid(), Long.toString(n.sbnNode.sys_guid));
     	 }
      }
+     
      if(sBins != null)
      {
-       // I only care about the system guid bin list that have more than one node guid in it
+       // I may only care about the system guid bin list that have more than one node guid in it
        BinList <IB_Guid> gBins = new BinList <IB_Guid>();
        for(String key: sBins.getKeys())
        {
          ArrayList <IB_Guid> o = sBins.getBin(key);
-         if((o.size() > 1) || (includeSingletons))
+         if((o.size() > 1) || (includeSingletons && o.size() > 0))
          {
-//           System.err.println("Sys guid:  " + key + " has " + o.size() + " guids");
+//           if(o.size() > 1)
+//             System.err.println("Sys guid:  " + key + " has " + o.size() + " guids");
            gBins.addBin(o, key);
          }
        }
@@ -1222,7 +1247,8 @@ private OSM_Node ManagementNode;
        {        
          systemGuidBins = gBins;
 //         System.err.println("There are " + systemGuidBins.size() + " systems, with the following sizes");
-//         System.err.println(systemGuidBins.toString());         
+//         if(gBins.size() < 5)
+//           System.err.println(systemGuidBins.toString());         
        }
      }
      return true;
@@ -1559,7 +1585,7 @@ private OSM_Node ManagementNode;
     
     public LinkedHashMap<String, String> getOptions()
     {
-    	createSystemGuidBins(true);
+    	createSystemGuidBins(false);
       if(this.getOsmSubnet() == null)
         return null;
       return OSM_Fabric.getOtions(this.getOsmSubnet().Options);

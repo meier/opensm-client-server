@@ -307,7 +307,7 @@ public class OsmUpdateManager implements Runnable, CommonLogger
         incrementHeartbeat();
         TimeUnit.SECONDS.sleep(getUpdatePeriod());  // wait for new data to become available
         
-        osmEventStats = OsmEventManager.getInstance().getEventStatistics();
+        osmEventStats = new OSM_EventStats(OsmEventManager.getInstance().getEventStatistics().getCounterArray());
         if(osmEventStats != null)
           setNativeEventStats(osmEventStats);
 
@@ -369,7 +369,8 @@ public class OsmUpdateManager implements Runnable, CommonLogger
         }
         
         // everything seemed to work, so update the OMS_List
-        updateOmsHistory(osmNodes, osmPorts, osmStats, osmSubn, osmSysInfo, osmPlugin, osmEventStats);
+//          updateOmsHistory(osmNodes, osmPorts, osmStats, osmSubn, osmSysInfo, osmPlugin, osmEventStats);
+          updateOmsHistory(getNativeNodes(), getNativePorts(), getNativeStats(), getNativeSubnet(), getNativeSystemInfo(), getNativePlugin(), getNativeEventStats());
 
        }
       catch (Exception e)
@@ -394,7 +395,7 @@ public class OsmUpdateManager implements Runnable, CommonLogger
   {
     synchronized (OsmUpdateManager.semaphore)
     {
-      nativeEventStats = osmEventStats;
+      nativeEventStats = new OSM_EventStats(osmEventStats.getCounterArray());
     }
   }
 

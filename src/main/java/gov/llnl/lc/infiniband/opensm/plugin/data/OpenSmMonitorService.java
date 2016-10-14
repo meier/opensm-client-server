@@ -134,7 +134,7 @@ public class OpenSmMonitorService implements Serializable, gov.llnl.lc.logging.C
         logger.severe(e.getMessage());
         logger.severe("Could not get an OMS from the interface");
         logger.severe(SessionStatus.toString());
-        logger.severe("Returning NULL, nothing can be done without a connection");
+        logger.severe("Returning NULL, nothing can be done without a connection (could be a serialization error)");
       }
     }
     else
@@ -167,7 +167,7 @@ public class OpenSmMonitorService implements Serializable, gov.llnl.lc.logging.C
         logger.severe(e.getMessage());
         logger.severe("Could not get an OMS_List from the interface");
         logger.severe(SessionStatus.toString());
-        logger.severe("Returning NULL, nothing can be done without a connection");
+        logger.severe("Returning NULL, nothing can be done without a connection (could be a serialization error)");
       }
     }
     else
@@ -223,7 +223,7 @@ public class OpenSmMonitorService implements Serializable, gov.llnl.lc.logging.C
         logger.severe(e.getMessage());
         logger.severe("Could not construct the OpenSmMonitorService object, check the constructor, and initializer?");
         logger.severe(SessionStatus.toString());
-        logger.severe("Returning NULL, nothing can be done without a connection");
+        logger.severe("Returning NULL, nothing can be done without a connection (could be a serialization error)");
       }
     }
     else

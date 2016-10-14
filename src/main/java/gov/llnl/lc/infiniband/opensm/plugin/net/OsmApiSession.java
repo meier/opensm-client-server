@@ -603,6 +603,14 @@ public class OsmApiSession extends ObjectSessionInterface implements OsmSession,
     {
       logger.severe("Not catching this error?? - 111");
       logger.severe("IOException: " + HostName + " ; " + e.getMessage());
+      if((e.getMessage() != null) && (e.getMessage().startsWith("Could not set up SSL Socket")))
+      {
+        // No service, or perhaps a handshake problem
+        logger.severe("Unable to set up SSL socket, check to see if service is available, and if SSL TSL handshake is failing");
+        System.err.println("Unable to set up SSL socket, check to see if service is available, and if SSL TSL handshake is failing");
+        // bail here, no sense in continuing
+        System.exit(1);
+      }
       logger.severe("Couldn't get I/O for the connection to: " + HostName);
       throw new IOException("Couldn't get I/O for the connection to: " + HostName);
     }

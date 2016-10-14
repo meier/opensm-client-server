@@ -87,10 +87,23 @@ public class OSM_EventStats implements Serializable
    *
    * @param event_counters
    ***********************************************************/
-  public OSM_EventStats(long[] event_counters)
+  public OSM_EventStats(long[] e_counters)
   {
     super();
-    this.event_counters = event_counters;
+    if(e_counters != null)
+    {
+      event_counters = new long[e_counters.length];
+      System.arraycopy( e_counters, 0, event_counters, 0, e_counters.length );
+    }
+  }
+  
+  public long[] getCounterArray()
+  {
+    if(event_counters == null)
+      return null;
+    long [] e_counters = new long[event_counters.length];
+    System.arraycopy( event_counters, 0, e_counters, 0, event_counters.length );
+    return e_counters;
   }
 
 
@@ -137,6 +150,21 @@ public class OSM_EventStats implements Serializable
       rtnval = ++event_counters[eventType.getEvent()];
     }
    return rtnval; 
+  }
+  
+  public String toEventString(OsmEvent eventType)
+  {
+    return eventType.getEventName() + "=" + getCounter(eventType);
+  }
+
+  public String toAllEventsString()
+  {
+    StringBuffer buffer = new StringBuffer();
+
+    for(OsmEvent s : OsmEvent.OSM_ALL_EVENTS)
+      buffer.append(toEventString(s) + "\n");
+    
+    return buffer.toString();
   }
 
 

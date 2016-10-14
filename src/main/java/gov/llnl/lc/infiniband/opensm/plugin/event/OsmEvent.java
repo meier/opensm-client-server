@@ -132,7 +132,18 @@ public int getEvent()
 public String getEventName()
 {
   return EventName;
+}
+
+public static String getEventEnumTable()
+{
+  StringBuffer buffer = new StringBuffer();
+  
+  for(OsmEvent s : OSM_ALL_EVENTS)
+  {
+    buffer.append(s.getEvent() + ": " + s.getEventName() + "\n");
   }
+  return buffer.toString();
+}
 
 public static OsmEvent get(int Event)
 { 
