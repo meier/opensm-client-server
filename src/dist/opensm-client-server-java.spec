@@ -3,7 +3,7 @@
 
 Name:           	opensm-client-server-java
 Version:        	2.01
-Release:        	69%{?dist}
+Release:        	71%{?dist}
 Summary:        	Java Client and Server library for OpenSM
 
 Group:          	Development/Libraries
