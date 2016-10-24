@@ -926,18 +926,14 @@ private OSM_Node ManagementNode;
        if(m.State.startsWith("Master"))
       {
         // find a node or port
-          OSM_Node mn = getOSM_Node(OSM_Fabric.getOSM_NodeKey(m.guid));
+         IB_Guid g = new IB_Guid(m.guid);
+         OSM_Node mn = getOSM_Node(g);
+         OSM_Port mp = getOSM_Port(g);
          if(mn == null)
          {
-           // didn't find the guid in the node table, so check the port table
-           OSM_Port pt = getOSM_Port(OSM_Fabric.getOSM_PortKey(m.guid, (short)1));
-           if(pt == null)
-             logger.severe("Could not initialize the Fabrics Subnet Manager");
-           else
-           {
-             OSM_Node pn = getOSM_Node(OSM_Fabric.getOSM_NodeKey(pt));
-             mn = getOSM_Node(pn.getOSM_NodeKey());
-           }
+           // didn't find it using the node guid, so try the port guid
+           if(mp != null)
+             mn = getOSM_Node(mp.getNodeGuid());
          }
          return mn;
       }
@@ -956,6 +952,21 @@ private OSM_Node ManagementNode;
     if(node != null)
       return node.equals(getManagementNode());
     return false;
+  }
+  
+  public OSM_Port getOSM_Port(IB_Guid portGuid)
+  {
+    // often a ports guid is the same as the nodes guid
+    // and a port needs to be identified by the nodes guid & port number
+    //
+    // sometimes, however, the node guid and port guid are different
+    // and often the port guid is just the node guid + port number
+    //
+    // return the first port which has this guid as its port guid
+    
+    ArrayList<OSM_Port> allPorts = OSM_Ports.createOSM_Ports(osmNodes, osmPorts);
+    
+    return OSM_Port.getOSM_Port(allPorts, portGuid);
   }
   
   public OSM_Port getOSM_Port(String PortKey)
@@ -1833,10 +1844,22 @@ private OSM_Node ManagementNode;
 
     public boolean isSubnetManager(IB_Guid g)
     {
+      // the subnet manager guid can either be a node guid or a port guid
+      // so check both, and return true if either are true
       OSM_Node n = getManagementNode();
       if((g != null) && (n != null))
       {
-        return g.equals(n.getNodeGuid());
+        OSM_Node mn = getOSM_Node(g);
+        OSM_Port mp = getOSM_Port(g);
+        if(mn == null)
+        {
+          // didn't find a node for this guid, so try the port guid
+          if(mp != null)
+            mn = getOSM_Node(mp.getNodeGuid());
+        }
+        if(n.getNodeGuid().equals(mn.getNodeGuid()))
+            return true;
+        
       }
       return false;
     }

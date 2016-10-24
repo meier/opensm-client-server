@@ -57,7 +57,6 @@ package gov.llnl.lc.infiniband.opensm.plugin.event;
 
 import gov.llnl.lc.infiniband.opensm.plugin.OsmInterface;
 import gov.llnl.lc.infiniband.opensm.plugin.OsmPluginMain;
-import gov.llnl.lc.infiniband.opensm.plugin.data.OsmUpdateManager;
 
 import java.util.ArrayList;
 import java.util.EnumSet;

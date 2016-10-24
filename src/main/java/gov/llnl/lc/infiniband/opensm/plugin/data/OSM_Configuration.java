@@ -55,15 +55,12 @@
  ********************************************************************/
 package gov.llnl.lc.infiniband.opensm.plugin.data;
 
-import gov.llnl.lc.infiniband.core.IB_Guid;
-import gov.llnl.lc.infiniband.core.IB_Link;
 import gov.llnl.lc.infiniband.opensm.plugin.OsmConstants;
 import gov.llnl.lc.infiniband.opensm.plugin.net.OsmClientApi;
 import gov.llnl.lc.infiniband.opensm.plugin.net.OsmServiceManager;
 import gov.llnl.lc.infiniband.opensm.plugin.net.OsmSession;
 import gov.llnl.lc.infiniband.opensm.xml.IB_FabricConf;
 import gov.llnl.lc.infiniband.opensm.xml.IB_LinkListElement;
-import gov.llnl.lc.infiniband.opensm.xml.IB_PortElement;
 import gov.llnl.lc.logging.CommonLogger;
 import gov.llnl.lc.net.ObjectSession;
 
@@ -220,8 +217,6 @@ public class OSM_Configuration implements Serializable, OsmConstants, CommonLogg
       String fNam = fabricName + ".cfg";
       String cNam = OMS_DEFAULT_DIR  + OMS_CACHE_DIR;
       return cNam + fNam;
-     
-//      return "/home/meier3/.smt/cache/fabric.his";
     }
     return null;
   }
@@ -349,106 +344,9 @@ public class OSM_Configuration implements Serializable, OsmConstants, CommonLogg
       // if here, I think we found a LinkListElement that matches our node, so build a return string
       nodeFound = true;
       return lle.toXMLString(0);
-//      for (IB_PortElement pe : lle.getPortElements())
-//      {
-//        String portNumber = pe.getNumber(); // this port number
-//        String rNodeName = pe.getIB_RemoteNodeElement().getName();
-//        String rPortNumber = pe.getIB_RemotePortElement().getNumber();
-//
-//        // attempt to find this "ideal" link in the link map (keyed off guid +
-//        // portnum
-//        IB_Guid lGuid = osmNodes.getGuidFromName(nodeName);
-//        IB_Guid rGuid = osmNodes.getGuidFromName(rNodeName);
-//        short pNum = Short.parseShort(portNumber);
-//        short rPNum = Short.parseShort(rPortNumber);
-//        long lguid = 0L;
-//        long rguid = 0L;
-//        if (lGuid != null)
-//          lguid = lGuid.getGuid();
-//        if (rGuid != null)
-//          rguid = rGuid.getGuid();
-//        String llKey = OSM_Port.getOSM_PortKey(lguid, pNum);
-//        String rlKey = OSM_Port.getOSM_PortKey(rguid, rPNum);
-//
-//        IB_Link llink = linkMap.get(llKey);
-//        if (llink != null)
-//        {
-//          /*
-//           * the lLink.Endpoint1 matches the ideal Link, endpoint1, so make sure
-//           * lLink.Endopoint2 matches endpoint2
-//           */
-//          String eKey = OSM_Port.getOSM_PortKey(llink.Endpoint2.getNodeGuid().getGuid(),
-//              (short) llink.Endpoint2.getPortNumber());
-//          if (rlKey.equals(eKey))
-//            foundIt = true;
-//        }
-//
-//        IB_Link rlink = linkMap.get(rlKey);
-//        if (rlink != null)
-//        {
-//          /*
-//           * the rLink.Endpoint1 matches the ideal Link, endpoint2, so make sure
-//           * rLink.Endopoint2 matches endpoint1
-//           */
-//          String eKey = OSM_Port.getOSM_PortKey(rlink.Endpoint2.getNodeGuid().getGuid(),
-//              (short) rlink.Endpoint2.getPortNumber());
-//          if (llKey.equals(eKey))
-//            foundIt = true;
-//        }
-//
-//        // show the problems (not founds)
-//        if (((llKey == null) && (rlKey == null)) || !foundIt)
-//        {
-//          // is either side of this link down?
-//          OSM_Port p = getOSM_Port(getOSM_PortKey(lguid, pNum));
-//          if (p != null)
-//            if (p.isActive())
-//            {
-//              // invalid
-//              String ivl = getLinkDescription(lguid, pNum, linkMap);
-//              String ils = fabricConfig.getLinkDescription(nodeName, portNumber, false);
-//              System.out.println("");
-//              System.out.println("ERR: invalid link : " + ivl);
-//              System.out.println("     Should be    : " + ils);
-//            }
-//            else if (includeDownedPorts)
-//            {
-//              // down
-//              String ils = fabricConfig.getLinkDescription(nodeName, portNumber, false);
-//              System.out.println("");
-//              System.out.println("ERR: port down: " + ils);
-//            }
-//
-//          p = getOSM_Port(getOSM_PortKey(rguid, rPNum));
-//          if (p != null)
-//            if (p.isActive())
-//            {
-//              // invalid
-//              String ivl = getLinkDescription(rguid, rPNum, linkMap);
-//              String ils = fabricConfig.getLinkDescription(nodeName, portNumber, false);
-//              System.out.println("");
-//              System.out.println("ERR: invalid link : " + ivl);
-//              System.out.println("     Should be    : " + ils);
-//
-//            }
-//            else if (includeDownedPorts)
-//            {
-//              // down
-//              String ils = fabricConfig.getLinkDescription(nodeName, portNumber, false);
-//              System.out.println("");
-//              System.out.println("ERR: port down: " + ils);
-//            }
-//        }
-//        if(nodeFound && foundIt)
-//          status = true;
-//        foundIt = false;
-//      }
     }
     if(!nodeFound)
       System.err.println("Could not find a matching node to display: " + node.sbnNode.description + ", " + node.getNodeGuid().toColonString());
-
-    
-    
     
     return null;
   }

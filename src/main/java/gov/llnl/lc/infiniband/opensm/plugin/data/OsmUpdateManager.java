@@ -310,6 +310,8 @@ public class OsmUpdateManager implements Runnable, CommonLogger
         osmEventStats = new OSM_EventStats(OsmEventManager.getInstance().getEventStatistics().getCounterArray());
         if(osmEventStats != null)
           setNativeEventStats(osmEventStats);
+        else
+          logger.info("The returned OSM_EventStats object appears to be null\n");
 
         osmNodes = osmInt.getOsmNodes();
         if(osmNodes != null)

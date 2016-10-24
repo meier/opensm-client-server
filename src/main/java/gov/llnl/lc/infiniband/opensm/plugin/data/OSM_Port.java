@@ -233,6 +233,26 @@ public class OSM_Port implements Serializable, CommonLogger, Comparable<OSM_Port
   
   /************************************************************
    * Method Name:
+   *  getPortGuid
+  **/
+  /**
+   * Returns the this ports guid, which may or may not be the
+   * same as the parents node guid.
+   *
+   * @see     describe related java objects
+   *
+   * @return
+   ***********************************************************/
+  public IB_Guid getPortGuid()
+  {
+    if(sbnPort != null)
+      return new IB_Guid(sbnPort.port_guid);
+    
+    return pfmPort == null ? null: new IB_Guid(pfmPort.node_guid + pfmPort.port_num);
+  }
+  
+  /************************************************************
+   * Method Name:
    *  getAddress
    **/
   /**
@@ -294,6 +314,39 @@ public class OSM_Port implements Serializable, CommonLogger, Comparable<OSM_Port
     }
     
     return pL;
+  }
+  
+  /************************************************************
+   * Method Name:
+   *  getOSM_Port
+  **/
+  /**
+   * Given a list of all the OSM_Ports that exist, this convenience
+   * method will discover and return the first port with this port guid.
+   *
+   * @see     describe related java objects  
+   * @param   describe the parameters
+   *
+   * @return  describe the value returned
+   ***********************************************************/
+  public static OSM_Port getOSM_Port(ArrayList<OSM_Port> allPortsArray, IB_Guid portGuid)
+  {
+    if((allPortsArray == null) || (allPortsArray.size() < 1) || (portGuid == null))
+      return null;
+    
+    for(OSM_Port p: allPortsArray)
+    {
+      if((p.getPortGuid() != null) && (p.getPortGuid().equals(portGuid)))
+        return p;
+    }
+    
+    for(OSM_Port p: allPortsArray)
+    {
+      if((p.getNodeGuid() != null) && (p.getNodeGuid().equals(portGuid)))
+        return p;
+    }
+    
+    return null;
   }
   
   /************************************************************
