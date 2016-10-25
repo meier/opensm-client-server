@@ -54,6 +54,10 @@ dependencies {
     compile name: 'reflections-0.9.9-RC1'
 }
 
+task wrapper(type: Wrapper) {
+   gradleVersion = '3.1' //version required
+}
+
 task makeDistro() << {
     def subdir = new File(project.buildDir, "distributions")
     println("subdir: "+ subdir)
