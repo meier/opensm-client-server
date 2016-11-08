@@ -434,6 +434,4 @@ public class OSM_Configuration implements Serializable, OsmConstants, CommonLogg
     return "OSM_Configuration [nodeNameMap=" + nodeNameMap + ", fabricConfig=" + fabricConfig + "]";
   }
 
-  
-
 }

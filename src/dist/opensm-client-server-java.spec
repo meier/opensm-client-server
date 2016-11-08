@@ -14,6 +14,7 @@ BuildArch:      	noarch
 
 BuildRequires:  	java-devel >= 1:1.6.0
 Requires:       	java >= 1:1.6.0
+Requires:       	llnl-curses-jni-libs
 Requires:       	llnl-ldapotp-clt-jni-auth-libs
 Requires:       	opensm-jni-plugin-libs
 Requires:			llnl-ldapotp-clt-java >= 2.01-35
