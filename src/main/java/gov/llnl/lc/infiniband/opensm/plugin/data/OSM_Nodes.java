@@ -55,14 +55,15 @@
  ********************************************************************/
 package gov.llnl.lc.infiniband.opensm.plugin.data;
 
-import gov.llnl.lc.infiniband.core.IB_Guid;
-import gov.llnl.lc.infiniband.core.NativePeerClass;
-import gov.llnl.lc.infiniband.opensm.plugin.net.OsmClientInterface;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+
+import gov.llnl.lc.infiniband.core.IB_Guid;
+import gov.llnl.lc.infiniband.core.NativePeerClass;
+import gov.llnl.lc.infiniband.opensm.plugin.net.OsmClientInterface;
+import gov.llnl.lc.util.filter.WhiteAndBlackListFilter;
 
 /**********************************************************************
  * The top level object which contains information about all the
@@ -303,5 +304,45 @@ public class OSM_Nodes implements Serializable
   {
     return "OSM_Nodes [PerfMgrNodes=" + Arrays.toString(PerfMgrNodes) + "\n\tSubnNodes="
         + Arrays.toString(SubnNodes) + "]\n";
+  }
+
+  /************************************************************
+   * Method Name:
+   *  getOSM_Nodes
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param osmNodes
+   * @param filter
+   * @return
+   ***********************************************************/
+  public static OSM_Nodes getOSM_Nodes(OSM_Nodes osmNodes, WhiteAndBlackListFilter filter)
+  {
+    // given a valid filter and nodes
+    if((osmNodes == null) || (filter == null))
+      return osmNodes;
+
+    // return the nodes that pass through the filter
+    /**  the nodes managed by the perf manager **/
+    ArrayList <PFM_Node> pNodes = new ArrayList <PFM_Node>();
+    /**  the nodes managed by the subnet manager **/
+    ArrayList <SBN_Node> sNodes = new ArrayList <SBN_Node>();
+    
+    // iterate through each list, and add them only if they pass through the filter
+    for(SBN_Node n: osmNodes.getSubnNodes())
+        if(!filter.isFiltered(n.getNodeGuid().toColonString()))
+          sNodes.add(n);
+ 
+    for(PFM_Node p: osmNodes.getPerfMgrNodes())
+        if(!filter.isFiltered(p.getNodeGuid().toColonString()))
+          pNodes.add(p);
+    
+    PFM_Node pA [] = new PFM_Node[pNodes.size()];
+    SBN_Node sA [] = new SBN_Node[sNodes.size()];
+
+    return new OSM_Nodes(pNodes.toArray(pA), sNodes.toArray(sA));
   }   
 }

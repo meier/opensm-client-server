@@ -64,6 +64,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.UUID;
 
 /**********************************************************************
  * A WhiteAndBlackListFilter is a simple filter using the common "white"
@@ -89,6 +90,12 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
   
   // the files used to create the Filter
   protected java.util.ArrayList<String> FileList     = new java.util.ArrayList<String>();
+
+  // an optional name for this filter
+  private String FilterName = "unknown";
+  
+  // a unique identifier, for this filter (name isn't good enough)
+  private UUID FilterID = null;
 
    /************************************************************
    * Method Name:
@@ -129,7 +136,9 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
       setWhiteList(f.getWhiteList());
       setBlackList(f.getBlackList());
       setFileList(f.getFileList());
+      setFilterName(f.getFilterName());
     }
+    setFilterID();
   }
   
   /************************************************************
@@ -155,7 +164,9 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
       setWhiteList(f.getWhiteList());
       setBlackList(f.getBlackList());
       setFileList(f.getFileList());
+      setFilterName(f.getFilterName());
     }
+    setFilterID();
   }
 
   /************************************************************
@@ -170,9 +181,10 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
    * @param whiteList
    * @param blackList
    ***********************************************************/
-  public WhiteAndBlackListFilter(ArrayList<String> whiteList, ArrayList<String> blackList, ArrayList<String> fileList)
+  public WhiteAndBlackListFilter(String name, ArrayList<String> whiteList, ArrayList<String> blackList, ArrayList<String> fileList)
   {
     super();
+    FilterName = name;
     WhiteList = whiteList;
     BlackList = blackList;
     FileList  = fileList;
@@ -180,6 +192,7 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
     int bls = BlackList == null ? 0: BlackList.size();
     int fls = FileList  == null ? 0: FileList.size();
     logger.info("Filter - WL:" + wls + ", BL:" + bls + ", FL:" + fls);
+    setFilterID();
   }
 
   protected static WhiteAndBlackListFilter initFilter(Map<String,String> map, String filterPropertyName) throws IOException
@@ -196,6 +209,11 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
     return null;
   }
   
+  private void setFilterID()
+  {
+    FilterID = UUID.randomUUID();
+  }
+  
   /************************************************************
    * Method Name:
    *  getWhiteList
@@ -210,6 +228,43 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
   public java.util.ArrayList<String> getWhiteList()
   {
     return WhiteList;
+  }
+
+  /************************************************************
+   * Method Name:
+   *  getFilterName
+  **/
+  /**
+   * Returns the value of filterName
+   *
+   * @return the filterName
+   *
+   ***********************************************************/
+  
+  public String getFilterName()
+  {
+    return FilterName;
+  }
+
+  public void setFilterName(String name)
+  {
+    FilterName = name;
+  }
+
+  /************************************************************
+   * Method Name:
+   *  getFilterID
+  **/
+  /**
+   * Returns the value of filterID
+   *
+   * @return the filterID
+   *
+   ***********************************************************/
+  
+  public UUID getFilterID()
+  {
+    return FilterID;
   }
 
   /************************************************************
@@ -378,6 +433,119 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
     return false;
   }
   
+  protected static void writeHeader(PrintWriter out, String fileName, WhiteAndBlackListFilter filter, String description)
+  {
+    out.println("#");
+    out.println("$ " + filter.getFilterName());
+    out.println("#");
+    out.println("# filter ID: " + filter.getFilterID().toString());
+    out.println("# file:      " + fileName);
+    out.println("# date:      " + new gov.llnl.lc.time.TimeStamp().toString());
+    out.println("#");
+    out.println("# author:    " + gov.llnl.lc.system.useraccount.User.getUserName());
+    if(description != null)
+      out.println("# " + description);
+    out.println("#");
+    writeFormatHelp(out);
+    out.println("#");
+
+    return;
+  }
+  
+  protected static void writeFormatHelp(PrintWriter out)
+  {
+    out.println("###################################################################");
+    out.println("# Beginning of Line characters for B&W Filter");
+    out.println("#");
+    out.println("# $ <name of this filter>");
+    out.println("# # <comment>");
+    out.println("# * White - b/w toggle, following lines are included in white list");
+    out.println("# * Black - b/w toggle, following lines are included in black list");
+    out.println("# @ <filename> - should be the name of a B&W Filter file to include");
+    out.println("###################################################################");
+    return;
+  }
+  
+  public static File writeFilter(String fileName, WhiteAndBlackListFilter filter) throws IOException
+  {
+    return writeFilter(fileName, filter, null);
+  }
+ 
+  public static File writeFilter(String fileName, WhiteAndBlackListFilter filter, String description) throws IOException
+  {
+    if(filter == null)
+    {
+      logger.severe("NULL filter, not writing");
+      return null;
+    }
+    
+    String fName = convertSpecialFileName(fileName);
+    File outFile = new File(fName);
+    if (outFile.exists()) 
+    {
+      logger.severe("File: (" + fName +") already exists, overwriting");
+    }
+    else
+    {
+      outFile.createNewFile();
+    }
+    // create a simple human readable text file
+    PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(outFile)));
+    writeHeader(out, fileName, filter, description);
+    
+    if(filter.hasWhiteList())
+    {
+      out.println("* White");
+      for(String string: filter.getWhiteList())
+      {
+        out.println(string);
+      }
+      out.println("#");
+    }
+    if(filter.hasBlackList())
+    {
+      out.println("* Black");
+      for(String string: filter.getBlackList())
+      {
+        out.println(string);
+      }
+      out.println("#");
+    }
+    out.close();
+    return outFile;
+}
+  /************************************************************
+   * Method Name:
+   *  hasBlackList
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @return
+   ***********************************************************/
+  public boolean hasBlackList()
+  {
+    return (BlackList != null) && !(BlackList.isEmpty());
+  }
+
+  /************************************************************
+   * Method Name:
+   *  hasWhiteList
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @return
+   ***********************************************************/
+  public boolean hasWhiteList()
+  {
+    return (WhiteList != null) && !(WhiteList.isEmpty());
+  }
+  
   protected static WhiteAndBlackListFilter readFilter(String fileName) throws IOException
   {
     String fName = convertSpecialFileName(fileName);
@@ -385,6 +553,7 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
     if (!inFile.exists()) 
     {
       logger.severe("Could not find file: (" + fName +") for reading");
+      System.err.println("Could not find file: (" + fName +") for reading");
       return null;
     }
     
@@ -396,6 +565,7 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
     BufferedReader br = new BufferedReader( new FileReader( inFile )) ;
     String readString = null;
     String fname = null;
+    String filterName = null;
     boolean isWhiteListType = true;   // the default
     
     // don't include leading and trailing white space
@@ -407,6 +577,19 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
       {
         switch( str.charAt(0))
         {
+          case '$':
+            // name of the filter
+            String n = str.substring(1);
+            // don't replace an existing name, first one wins!
+            if((n == null) || (n.length() < 1) || (n.trim().length() < 1))
+            {
+              logger.severe("illegal filter name");
+              break;
+            }
+            filterName =n.trim();
+            logger.info("Filter Name is: (" + filterName + ")");
+            break;
+            
           case '*':
             // change list type
             if(str.indexOf("White") > -1)
@@ -427,10 +610,14 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
             WhiteAndBlackListFilter ff = new WhiteAndBlackListFilter(fname);
             if(ff != null)
             {
-              // add these lists to our own
+              // add this filter to this one
               WL.addAll(ff.getWhiteList());
               BL.addAll(ff.getBlackList());
               FL.addAll(ff.getFileList());
+              
+              // If I don't already have a filter name, use from file
+              if((filterName == null) || (filterName.length() < 1))
+                filterName = ff.getFilterName();
             }
              break;
             
@@ -450,7 +637,12 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
       }
      }
     br.close(  ) ;
-    return new WhiteAndBlackListFilter(WL, BL, FL);
+    
+    // make sure the filter has a name
+    if((filterName == null) || (filterName.length() < 1))
+      filterName = fName;
+    
+    return new WhiteAndBlackListFilter(filterName, WL, BL, FL);
    }
   
   public WhiteAndBlackListFilter addWhiteList(ArrayList<String> list)
@@ -481,32 +673,36 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
       addWhiteList(filter.getWhiteList());
       addBlackList(filter.getBlackList());
       addFileList(filter.getFileList());
+      
+      // If I don't already have a filter name, use from file
+      if((FilterName == null) || (FilterName.length() < 1))
+        FilterName = filter.getFilterName();
     }
     return this;
   }
   
-  protected static void writeStrings(String fileName, java.util.ArrayList<String> stringList) throws IOException
-  {
-    if((stringList == null) || (stringList.size() == 0))
-      return;
-    
-    String fName = convertSpecialFileName(fileName);
-    File outFile = new File(fName);
-    
-      if (!outFile.exists()) 
-      {
-        outFile.createNewFile();
-      }
-      PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(outFile)));
-      
-      // iterate through the list
-      for(String string: stringList)
-      {
-        out.println(string);
-      }
-      out.close();
-    return;
-  }
+//  protected static void writeStrings(String fileName, java.util.ArrayList<String> stringList) throws IOException
+//  {
+//    if((stringList == null) || (stringList.size() == 0))
+//      return;
+//    
+//    String fName = convertSpecialFileName(fileName);
+//    File outFile = new File(fName);
+//    
+//      if (!outFile.exists()) 
+//      {
+//        outFile.createNewFile();
+//      }
+//      PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(outFile)));
+//      
+//      // iterate through the list
+//      for(String string: stringList)
+//      {
+//        out.println(string);
+//      }
+//      out.close();
+//    return;
+//  }
 
   /************************************************************
    * Method Name:
@@ -530,6 +726,8 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
       System.out.println("The white list is: " + filter.getWhiteList().size());
       System.out.println("The black list is: " + filter.getBlackList().size());
       System.out.println("The file list is: " + filter.getFileList().size());
+      System.out.println("\nThe filter name is: " + filter.getFilterName());
+      System.out.println("The filter ID is: " + filter.getFilterID().toString());
     }
   }
 

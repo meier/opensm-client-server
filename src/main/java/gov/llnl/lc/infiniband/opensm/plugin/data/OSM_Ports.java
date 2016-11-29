@@ -55,15 +55,16 @@
  ********************************************************************/
 package gov.llnl.lc.infiniband.opensm.plugin.data;
 
-import gov.llnl.lc.infiniband.core.IB_Guid;
-import gov.llnl.lc.infiniband.core.IB_Link;
-import gov.llnl.lc.infiniband.core.NativePeerClass;
-import gov.llnl.lc.infiniband.opensm.plugin.net.OsmClientInterface;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+
+import gov.llnl.lc.infiniband.core.IB_Guid;
+import gov.llnl.lc.infiniband.core.IB_Link;
+import gov.llnl.lc.infiniband.core.NativePeerClass;
+import gov.llnl.lc.infiniband.opensm.plugin.net.OsmClientInterface;
+import gov.llnl.lc.util.filter.WhiteAndBlackListFilter;
 
 /**********************************************************************
  * The top level object which contains information about all the
@@ -460,6 +461,46 @@ public class OSM_Ports implements Serializable
   {
     return "OSM_Ports [PerfMgrPorts=" + Arrays.toString(PerfMgrPorts) + "\n\tSubnPorts="
         + Arrays.toString(SubnPorts) + "]\n";
+  }
+
+  /************************************************************
+   * Method Name:
+   *  getOSM_Ports
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param osmPorts
+   * @param filter
+   * @return
+   ***********************************************************/
+  public static OSM_Ports getOSM_Ports(OSM_Ports osmPorts, WhiteAndBlackListFilter filter)
+  {
+    // given a valid filter and ports
+    if((osmPorts == null) || (filter == null))
+      return osmPorts;
+
+    // return the nodes that pass through the filter
+    /**  the nodes managed by the perf manager **/
+    ArrayList <PFM_Port> pPorts = new ArrayList <PFM_Port>();
+    /**  the nodes managed by the subnet manager **/
+    ArrayList <SBN_Port> sPorts = new ArrayList <SBN_Port>();
+    
+    // iterate through each list, and add them only if they pass through the filter
+    for(SBN_Port n: osmPorts.getSubnPorts())
+        if(!filter.isFiltered(new IB_Guid(n.node_guid).toColonString()))
+          sPorts.add(n);
+ 
+    for(PFM_Port p: osmPorts.getPerfMgrPorts())
+        if(!filter.isFiltered(p.getNodeGuid().toColonString()))
+          pPorts.add(p);
+    
+    PFM_Port pA [] = new PFM_Port[pPorts.size()];
+    SBN_Port sA [] = new SBN_Port[sPorts.size()];
+
+    return new OSM_Ports(pPorts.toArray(pA), sPorts.toArray(sA));
   }
    
 

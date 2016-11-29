@@ -55,6 +55,19 @@
  ********************************************************************/
 package gov.llnl.lc.infiniband.opensm.plugin.data;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.concurrent.TimeUnit;
+
 import gov.llnl.lc.infiniband.core.IB_Address;
 import gov.llnl.lc.infiniband.core.IB_Guid;
 import gov.llnl.lc.infiniband.core.IB_Link;
@@ -70,19 +83,7 @@ import gov.llnl.lc.infiniband.opensm.xml.IB_LinkListElement;
 import gov.llnl.lc.infiniband.opensm.xml.IB_PortElement;
 import gov.llnl.lc.time.TimeStamp;
 import gov.llnl.lc.util.BinList;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.concurrent.TimeUnit;
+import gov.llnl.lc.util.filter.WhiteAndBlackListFilter;
 
 /**********************************************************************
  * The OSM_Fabric object represents a snapshot of all of the "fabric"
@@ -197,6 +198,25 @@ private OSM_Node ManagementNode;
   {
     super();
   }
+  
+  public static OSM_Fabric getOSM_Fabric(OSM_Fabric fabric, WhiteAndBlackListFilter filter)
+  {
+    // given a fabric, return only those nodes and ports that pass through the filter
+    
+    String name              = fabric.getFabricName();
+    OSM_Nodes osmNodes       = fabric.getOsmNodes(filter);
+    OSM_Ports osmPorts       = fabric.getOsmPorts(filter);
+    OSM_Stats osmStats       = fabric.getOsmStats();
+    OSM_Subnet osmSubnet     = fabric.getOsmSubnet();
+    OSM_SysInfo osmSysInfo   = fabric.getOsmSysInfo();
+    OSM_EventStats osmEstats = fabric.getOsmEventStats();
+    
+    logger.info("Constructing the Fabric now");
+    OSM_Fabric f = new OSM_Fabric(name, osmNodes, osmPorts, osmStats, osmSubnet, osmSysInfo, osmEstats);
+    logger.info("Done constructing the Fabric");
+    return f;
+  }
+
   
   public static OSM_Fabric getOSM_Fabric(String hostName, String portNumber)
   {
@@ -1744,8 +1764,6 @@ private OSM_Node ManagementNode;
       return oMap;
     }
     
-
-    
     public OSM_Stats getOsmStats()
     {
       return osmStats;
@@ -1764,6 +1782,16 @@ private OSM_Node ManagementNode;
     }
     public OSM_Ports getOsmPorts()
     {
+      return osmPorts;
+    }
+    public OSM_Nodes getOsmNodes(WhiteAndBlackListFilter filter)
+    {
+      OSM_Nodes nodes = OSM_Nodes.getOSM_Nodes(osmNodes, filter);
+      return nodes;
+    }
+    public OSM_Ports getOsmPorts(WhiteAndBlackListFilter filter)
+    {
+      OSM_Ports ports = OSM_Ports.getOSM_Ports(osmPorts, filter);
       return osmPorts;
     }
     public OSM_EventStats getOsmEventStats()

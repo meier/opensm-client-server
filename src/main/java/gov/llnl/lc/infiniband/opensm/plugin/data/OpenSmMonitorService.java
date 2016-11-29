@@ -64,6 +64,7 @@ import gov.llnl.lc.infiniband.opensm.plugin.net.OsmServiceManager;
 import gov.llnl.lc.infiniband.opensm.plugin.net.OsmSession;
 import gov.llnl.lc.net.ObjectSession;
 import gov.llnl.lc.time.TimeStamp;
+import gov.llnl.lc.util.filter.WhiteAndBlackListFilter;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -109,6 +110,13 @@ public class OpenSmMonitorService implements Serializable, gov.llnl.lc.logging.C
     ParentSessionStatus = parentSessionStatus;
     RemoteServerStatus = remoteServerStatus;
     Fabric = fabric;
+  }
+
+  public static OpenSmMonitorService getOpenSmMonitorService(OpenSmMonitorService oms, WhiteAndBlackListFilter filter)
+  {
+    // the fabric is the only thing that is filtered
+    return new OpenSmMonitorService(oms.getParentSessionStatus(), oms.getRemoteServerStatus(), OSM_Fabric.getOSM_Fabric(oms.getFabric(), filter));
+        
   }
 
   public static OpenSmMonitorService getOpenSmMonitorService(OsmSession ParentSession)

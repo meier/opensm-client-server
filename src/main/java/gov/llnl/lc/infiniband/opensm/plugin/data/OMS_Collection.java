@@ -85,7 +85,6 @@ import java.util.zip.GZIPOutputStream;
  **********************************************************************/
 public class OMS_Collection implements Serializable, OsmConstants, gov.llnl.lc.logging.CommonLogger
 {
-
   /**  describe serialVersionUID here **/
   private static final long serialVersionUID = 8489153020653218925L;
 
@@ -111,16 +110,15 @@ public class OMS_Collection implements Serializable, OsmConstants, gov.llnl.lc.l
     this(0);
   }
 
-
   /* don't allow the collection to grow infinitely large, sliding window */
   public static final int MAX_COLLECTION_SIZE = 500;
   
-  private int MaxSize = MAX_COLLECTION_SIZE;
+  protected int MaxSize = MAX_COLLECTION_SIZE;
   
-  private static boolean stopAppending = false;
+  protected static boolean stopAppending = false;
   
   /** compress the object when serializing it to a file? **/
-  private static boolean useCompression = true;
+  protected static boolean useCompression = true;
     
   /** a list of Listeners, interested in knowing when the size of the collection changes**/
   private static java.util.ArrayList <OMS_CollectionChangeListener> Collection_Listeners =
@@ -163,7 +161,7 @@ public class OMS_Collection implements Serializable, OsmConstants, gov.llnl.lc.l
     }
 
 
-    private int AveDeltaSeconds = 0;
+    protected int AveDeltaSeconds = 0;
 
     
     /************************************************************
@@ -201,7 +199,7 @@ public class OMS_Collection implements Serializable, OsmConstants, gov.llnl.lc.l
 
   //
   /* keyed off fabric name and timestamp (insertion order is important) */
-  private LinkedHashMap<String, OpenSmMonitorService> omsHistory = new LinkedHashMap<String, OpenSmMonitorService>(MaxSize+1, .75F, false)
+  protected LinkedHashMap<String, OpenSmMonitorService> omsHistory = new LinkedHashMap<String, OpenSmMonitorService>(MaxSize+1, .75F, false)
   {  
     /**  describe serialVersionUID here **/
     private static final long serialVersionUID = 5427649718728192370L;
@@ -983,7 +981,6 @@ public class OMS_Collection implements Serializable, OsmConstants, gov.llnl.lc.l
     }
     return true;    
   }
-
 
   public static OMS_Collection readOMS_Collection(String fileName) throws FileNotFoundException, IOException, ClassNotFoundException
   {
