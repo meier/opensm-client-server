@@ -55,6 +55,7 @@
  ********************************************************************/
 package gov.llnl.lc.infiniband.opensm.plugin.data;
 
+import gov.llnl.lc.infiniband.opensm.plugin.data.PFM_Port.PortCounterName;
 import gov.llnl.lc.logging.CommonLogger;
 
 import java.util.EnumSet;
@@ -230,6 +231,14 @@ public static OSM_LinkSpeed get(int speed_num)
     return lookup.get(speed_num); 
 }
 
+public static OSM_LinkSpeed getByName(String name)
+{
+  // return the first property with an exact name match
+  return OSM_LinkSpeed.getByName(name, false);
+}
+
+
+
 public static OSM_LinkSpeed get(OSM_Port port)
 { 
   if(port == null)
@@ -290,8 +299,11 @@ public static OSM_LinkSpeed get(SBN_PortInfo portInfo, MLX_ExtPortInfo extPortIn
     // either FDR or QDR
     if((extPortInfo.link_speed_active & FDR10_MASK) != 0)
       return OSM_LinkSpeed.FOURTEEN;
-    return OSM_LinkSpeed.TEN;
- 
+    
+    // portInfo.link_speed_ext; == 35  is EDR
+    if(portInfo.link_speed_ext == 35)
+      return OSM_LinkSpeed.TWENTYFIVE;
+    
 //    logger.severe("Unknown Extended Link Speed1: " + portInfo.link_speed_ext);
 //    logger.severe("Unknown Extended Link Speed2: " + extPortInfo.link_speed_active);
 //    logger.severe("Unknown Extended Link Speed3: " + extPortInfo.link_speed_enabled);
@@ -314,14 +326,15 @@ public static OSM_LinkSpeed get(SBN_PortInfo portInfo, MLX_ExtPortInfo extPortIn
 //  if (link_speed_active > IB_LINK_SPEED_ACTIVE_10)
 //        return OSM_LinkSpeed.QM;
 
-  if(port_speed_extended)
-{
+//  if(port_speed_extended)
+//{
+  // so far, this almost always turns out to be QDR ( lsea: 0 and lsa: 4)
 //  System.err.println("Port Speed Extended:       (" + port_speed_extended + ")");
 //  System.err.println("Extended Speed value1: (" + link_speed_ext_active + ")");
 //  System.err.println("Normal   Speed value2: (" + link_speed_active + ")");
-  return OSM_LinkSpeed.get(link_speed_active);  // currently, this would fall through anyway, not necessary
-}
-  
+//  return OSM_LinkSpeed.get(link_speed_active);  // currently, this would fall through anyway, not necessary
+//}
+//  
   return OSM_LinkSpeed.get(link_speed_active);
 //
 //  
@@ -337,6 +350,36 @@ public static OSM_LinkSpeed get(SBN_PortInfo portInfo, MLX_ExtPortInfo extPortIn
 //    if (link_speed_ext_active > IB_LINK_SPEED_EXT_ACTIVE_25)
 //      return OSM_LinkSpeed.QM;
 //    return OSM_LinkSpeed.get(link_speed_ext_active + OSM_LinkSpeed.STD.getSpeed());
+}
+
+/************************************************************
+ * Method Name:
+ *  getByName
+**/
+/**
+ * Describe the method here
+ *
+ * @see     describe related java objects
+ *
+ * @param lSpeed
+ * @param b
+ * @return
+ ***********************************************************/
+public static OSM_LinkSpeed getByName(String lSpeed, boolean bIgnoreCase)
+{
+  // convert to upper case
+  if((lSpeed != null) && (lSpeed.length() > 1))
+  {
+    String name = bIgnoreCase ? lSpeed.toUpperCase().trim(): lSpeed.trim();
+    for(OSM_LinkSpeed s : OSMLINK_ALL_SPEEDS)
+    {
+      String speed = bIgnoreCase ? s.getSpeedName().toUpperCase(): s.getSpeedName();
+      // return the first property with an exact name match
+      if(speed.equals(name))
+        return s;
+    }
+  }
+  return null;
 }
 
 }
