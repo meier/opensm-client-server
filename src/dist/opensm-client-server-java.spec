@@ -2,8 +2,8 @@
 %define osm_config_dir etc/opensm-plugin
 
 Name:           	opensm-client-server-java
-Version:        	2.02
-Release:        	73%{?dist}
+Version:        	2.03
+Release:        	75%{?dist}
 Summary:        	Java Client and Server library for OpenSM
 
 Group:          	Development/Libraries
@@ -66,6 +66,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_javadir}/%{java_package_name}/bin/*
 
 %changelog
+* Fri Dec 9 2016 Tim Meier <meier3@llnl.gov> 2.03-75
+- version 2.03 release 75, file filter, speed support for ports and links
 * Wed Nov 9 2016 Tim Meier <meier3@llnl.gov> 2.02-73
 - version 2.02 release 73 (java 8 gradle 3)
 * Thu Nov 19 2015 Tim Meier <meier3@llnl.gov> 2.01-69
