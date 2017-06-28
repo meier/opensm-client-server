@@ -516,6 +516,22 @@ public class WhiteAndBlackListFilter implements gov.llnl.lc.logging.CommonLogger
 }
   /************************************************************
    * Method Name:
+   *  hasEmptyFilter
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @return
+   ***********************************************************/
+  public boolean hasEmptyFilter()
+  {
+    return !hasBlackList() && !hasWhiteList();
+  }
+
+  /************************************************************
+   * Method Name:
    *  hasBlackList
   **/
   /**
