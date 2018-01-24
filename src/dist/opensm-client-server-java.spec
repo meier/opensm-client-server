@@ -2,8 +2,8 @@
 %define osm_config_dir etc/opensm-plugin
 
 Name:           	opensm-client-server-java
-Version:        	2.03
-Release:        	75%{?dist}
+Version:        	2.04
+Release:        	77%{?dist}
 Summary:        	Java Client and Server library for OpenSM
 
 Group:          	Development/Libraries
@@ -66,6 +66,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_javadir}/%{java_package_name}/bin/*
 
 %changelog
+* Tue Jan 23 2018 Tim Meier <meier3@llnl.gov> 2.04-77
+- version 2.04 release 77, added OMS validation checks
 * Fri Dec 9 2016 Tim Meier <meier3@llnl.gov> 2.03-75
 - version 2.03 release 75, file filter, speed support for ports and links
 * Wed Nov 9 2016 Tim Meier <meier3@llnl.gov> 2.02-73
