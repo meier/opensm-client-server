@@ -55,17 +55,6 @@
  ********************************************************************/
 package gov.llnl.lc.infiniband.opensm.plugin.data;
 
-import gov.llnl.lc.infiniband.opensm.plugin.event.OSM_EventStats;
-import gov.llnl.lc.infiniband.opensm.plugin.net.OsmAdminApi;
-import gov.llnl.lc.infiniband.opensm.plugin.net.OsmClientApi;
-import gov.llnl.lc.infiniband.opensm.plugin.net.OsmEventApi;
-import gov.llnl.lc.infiniband.opensm.plugin.net.OsmServerStatus;
-import gov.llnl.lc.infiniband.opensm.plugin.net.OsmServiceManager;
-import gov.llnl.lc.infiniband.opensm.plugin.net.OsmSession;
-import gov.llnl.lc.net.ObjectSession;
-import gov.llnl.lc.time.TimeStamp;
-import gov.llnl.lc.util.filter.WhiteAndBlackListFilter;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -77,6 +66,17 @@ import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import gov.llnl.lc.infiniband.opensm.plugin.event.OSM_EventStats;
+import gov.llnl.lc.infiniband.opensm.plugin.net.OsmAdminApi;
+import gov.llnl.lc.infiniband.opensm.plugin.net.OsmClientApi;
+import gov.llnl.lc.infiniband.opensm.plugin.net.OsmEventApi;
+import gov.llnl.lc.infiniband.opensm.plugin.net.OsmServerStatus;
+import gov.llnl.lc.infiniband.opensm.plugin.net.OsmServiceManager;
+import gov.llnl.lc.infiniband.opensm.plugin.net.OsmSession;
+import gov.llnl.lc.net.ObjectSession;
+import gov.llnl.lc.time.TimeStamp;
+import gov.llnl.lc.util.filter.WhiteAndBlackListFilter;
 
 public class OpenSmMonitorService implements Serializable, gov.llnl.lc.logging.CommonLogger
 {
@@ -671,6 +671,51 @@ public class OpenSmMonitorService implements Serializable, gov.llnl.lc.logging.C
       System.out.println("got a good one");
     }
 
+  }
+
+  /************************************************************
+   * Method Name:
+   *  isValid
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @return
+   ***********************************************************/
+  public boolean isValid()
+  {
+    // At a minimum, there must be a good timestamp
+    TimeStamp t0 = this.getRemoteServerStatus().Server.getStartTime();
+    TimeStamp t1 = this.getTimeStamp();
+    TimeStamp t2 = this.getPFM_TimeStamp();
+    
+    OSM_Fabric fab = getFabric();
+    if(fab == null)
+    {
+      logger.severe("The fabric is null");
+      return false;
+    }
+    
+    if(t0 == null)
+    {
+      logger.severe("Remote Server time is null");
+      return false;
+    }
+    if(t1 == null)
+    {
+      logger.severe("Fabric timestamp is null");
+      return false;
+    }
+    if(t2 == null)
+    {
+      logger.severe("PerfMgr timestamp is null");
+      return false;
+    }
+    
+    // all tests passed
+    return true;
   }
 
 }

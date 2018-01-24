@@ -55,11 +55,6 @@
  ********************************************************************/
 package gov.llnl.lc.infiniband.opensm.plugin.data;
 
-import gov.llnl.lc.infiniband.opensm.plugin.OsmConstants;
-import gov.llnl.lc.infiniband.opensm.plugin.net.OsmServiceManager;
-import gov.llnl.lc.infiniband.opensm.plugin.net.OsmSession;
-import gov.llnl.lc.time.TimeStamp;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -73,6 +68,11 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import gov.llnl.lc.infiniband.opensm.plugin.OsmConstants;
+import gov.llnl.lc.infiniband.opensm.plugin.net.OsmServiceManager;
+import gov.llnl.lc.infiniband.opensm.plugin.net.OsmSession;
+import gov.llnl.lc.time.TimeStamp;
 
 /**********************************************************************
  * Describe purpose and responsibility of OMS_Collection
@@ -1005,7 +1005,9 @@ public class OMS_Collection implements Serializable, OsmConstants, gov.llnl.lc.l
     if(useCompression)
       in.close();
     fileInput.close();
-    return obj;
+    
+    // return a valid subset of OMSs
+    return OMS_Collection.validateOMS_Collection(obj);
   }
   
   public static void writeOMS_Collection(String fileName, OMS_Collection omsHistory) throws IOException
@@ -1215,6 +1217,61 @@ public class OMS_Collection implements Serializable, OsmConstants, gov.llnl.lc.l
       buff.append(f.toTimeString());
     }
     return buff.toString();
+  }
+
+  /************************************************************
+   * Method Name:
+   *  validateOMS_Collection
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param omsHistory2
+   * @return
+   ***********************************************************/
+  public static OMS_Collection validateOMS_Collection(OMS_Collection omsCollection)
+  {
+    // walk through the provided history, performing validity tests on each snapshot
+    // create a new collection with snapshots that pass the tests
+    //
+    // ensure validity of timestamps, number ports, nodes, etc
+    //
+    if((omsCollection != null) && (omsCollection.getSize() > 0))
+    {
+      logger.info("** Attempting Collection Validation **");
+      
+      LinkedHashMap<String, OpenSmMonitorService> origHistory = omsCollection.getOSM_History();
+      Object [] oArray = origHistory.values().toArray();
+      
+      // throw ArrayIndexOutOfBounds exception, or return null?
+      if((oArray != null) && (oArray.length > 0))
+      {
+        // okay, we can create a new collection to be returned
+        OMS_Collection validHistory = new OMS_Collection();
+        int ndex = 0;
+         
+        for(Object o: oArray)
+        {
+          OpenSmMonitorService oms = (OpenSmMonitorService)o;
+
+          ndex++;
+          // if its a valid oms, then add it to the new collection
+          if(oms.isValid())
+            validHistory.put(oms);
+          else
+            logger.severe("Invalid OMS, not adding " + ndex);
+        }
+        return validHistory;
+      }
+      else
+        logger.severe("Invalid OMS_Collection, could not get History ");        
+    }
+    else
+      logger.severe("Invalid OMS_Collection (null or empty), not validating contents ");        
+
+    return omsCollection;
   }
 
 }
