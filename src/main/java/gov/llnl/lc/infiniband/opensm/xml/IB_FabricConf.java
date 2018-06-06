@@ -216,6 +216,26 @@ public class IB_FabricConf implements Serializable, gov.llnl.lc.logging.CommonLo
     return CommentElements;
   }
 
+  public String toJsonString(int indentLevel)
+  {
+    // this is basically printing out the XML document, but using the Java Objects
+    StringBuffer buff = new StringBuffer();
+    
+    buff.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
+    buff.append(SystemConstants.NEW_LINE);
+    buff.append(FabricNameElement.toXMLString(indentLevel));
+    
+    // get all of the Node or IB_LinkListElements
+    for(IB_LinkListElement lle: getNodeElements())
+    {
+      buff.append(SystemConstants.NEW_LINE);
+      buff.append(lle.toXMLString(indentLevel + 1));
+    }
+    buff.append(SystemConstants.NEW_LINE);
+    buff.append(FabricNameElement.toXMLString(indentLevel, true));
+    return buff.toString();
+  }
+
   public String toXMLString(int indentLevel)
   {
     // this is basically printing out the XML document, but using the Java Objects
@@ -233,6 +253,21 @@ public class IB_FabricConf implements Serializable, gov.llnl.lc.logging.CommonLo
     }
     buff.append(SystemConstants.NEW_LINE);
     buff.append(FabricNameElement.toXMLString(indentLevel, true));
+    return buff.toString();
+  }
+
+  public String toLinkStrings(String delimiter)
+  {
+    // mimics the behavior of "ibparsefabricconf -d"delim""
+    //
+    // instead of using the ibfabricconf.xml file, uses the data structure
+    // within IB_FabricConf
+    StringBuffer buff = new StringBuffer();
+    
+    // get all of the Node or IB_LinkListElements
+    for(IB_LinkListElement lle: getNodeElements())
+      buff.append(lle.toLinkString(delimiter));
+
     return buff.toString();
   }
 

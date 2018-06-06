@@ -251,9 +251,88 @@ public class IB_PortElement implements Serializable
   {
     return r_node;
   }
-  
+
+  public String getWidth()
+  {
+    if(!getWidthAttribute().equals("unspecified"))
+      return getWidthAttribute();
+    Node parentSW = Root.getParentNode();
+    
+    Node n = parentSW.getAttributes().getNamedItem("width");
+    if(n != null)
+      return n.getNodeValue();
+    
+    Node parentFab = parentSW.getParentNode();
+    
+    n = parentFab.getAttributes().getNamedItem("width");
+    if(n != null)
+      return n.getNodeValue();
+   
+    return "unspecified";
+  }
+
+  public String getSpeed()
+  {
+    if(!getSpeedAttribute().equals("unspecified"))
+      return getSpeedAttribute();
+    Node parentSW = Root.getParentNode();
+    
+    Node n = parentSW.getAttributes().getNamedItem("speed");
+    if(n != null)
+      return n.getNodeValue();
+    
+    Node parentFab = parentSW.getParentNode();
+    
+    n = parentFab.getAttributes().getNamedItem("speed");
+    if(n != null)
+      return n.getNodeValue();
+   
+    return "unspecified";
+  }
+
+  public String getWidthAttribute()
+  {
+    return getAttributeValue("width");
+  }
+
+  public String getSpeedAttribute()
+  {
+    return getAttributeValue("speed");
+  }
+
+
   public java.util.ArrayList<Comment> getCommentElements()
   {
     return CommentElements;
+  }
+
+  /************************************************************
+   * Method Name:
+   *  toPortString
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param name
+   * @param delimiter
+   * @return
+   ***********************************************************/
+  public Object toPortString(String name, String delimiter)
+  {
+    StringBuffer buff = new StringBuffer();
+    buff.append(name);
+    buff.append( delimiter);
+    buff.append(getNumber());
+    buff.append( delimiter);
+    buff.append(r_port.getNumber());
+    buff.append( delimiter);
+    buff.append(r_node.getName());
+    buff.append( delimiter);
+    buff.append(getSpeed());
+    buff.append( delimiter);
+    buff.append(getWidth());
+    return buff.toString();
   }
 }

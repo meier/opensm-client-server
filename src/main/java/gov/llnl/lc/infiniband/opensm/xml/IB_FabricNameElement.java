@@ -88,7 +88,7 @@ public class IB_FabricNameElement implements Serializable
     if(root.getNodeType() == Node.ELEMENT_NODE)
     {
       Root = root;
-      // iterate through the attributes and buld the map
+      // iterate through the attributes and build the map
       for(int ndex = 0; ndex < root.getAttributes().getLength(); ndex++)
       {
         Node e = root.getAttributes().item(ndex);

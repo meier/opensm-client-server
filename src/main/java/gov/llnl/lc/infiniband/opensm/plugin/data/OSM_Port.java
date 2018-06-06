@@ -822,6 +822,26 @@ public class OSM_Port implements Serializable, CommonLogger, Comparable<OSM_Port
   {
      return Integer.toString(this.getPortNumber());
   }
+
+  /************************************************************
+   * Method Name:
+   *  hasRemote
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @return
+   ***********************************************************/
+  public boolean hasRemote()
+  {
+    // return true if it looks like this port is part of a good link    
+    if((sbnPort != null) && (sbnPort.linked_port_num > 0) && (sbnPort.linked_node_guid > 0L))
+      return true;
+
+    return false;
+  }
   
 
 

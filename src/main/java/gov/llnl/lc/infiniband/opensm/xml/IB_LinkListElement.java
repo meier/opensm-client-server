@@ -55,8 +55,6 @@
  ********************************************************************/
 package gov.llnl.lc.infiniband.opensm.xml;
 
-import gov.llnl.lc.util.SystemConstants;
-
 import java.io.Serializable;
 import java.util.HashMap;
 
@@ -66,8 +64,12 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import gov.llnl.lc.util.SystemConstants;
+
 /**********************************************************************
- * Describe purpose and responsibility of IB_LinkListElement
+ * The IB_LinkListElement represents all the links from a node.  A node
+ * can be a switch (many) or a channel adapter (1 or 2).  The parent of
+ * an IB_LinkListElement is the IB_FaricNameElement.
  * <p>
  * @see  related classes and interfaces
  *
@@ -181,6 +183,44 @@ public class IB_LinkListElement implements Serializable
   {
     return CommentElements;
   }
+  
+  public String getWidth()
+  {
+    if(!getWidthAttribute().equals("unspecified"))
+      return getWidthAttribute();
+    
+    Node parentFab = Root.getParentNode();
+    Node n = parentFab.getAttributes().getNamedItem("width");
+    if(n != null)
+      return n.getNodeValue();
+   
+    return "unspecified";
+  }
+
+  public String getSpeed()
+  {
+    if(!getSpeedAttribute().equals("unspecified"))
+      return getSpeedAttribute();
+
+    Node parentFab = Root.getParentNode();
+    Node n = parentFab.getAttributes().getNamedItem("speed");
+    if(n != null)
+      return n.getNodeValue();
+   
+    return "unspecified";
+  }
+
+
+  
+  public String getWidthAttribute()
+  {
+    return getAttributeValue("width");
+  }
+
+  public String getSpeedAttribute()
+  {
+    return getAttributeValue("speed");
+  }
 
   public IB_PortElement getPortElement(String portNumber)
   {
@@ -207,6 +247,30 @@ public class IB_LinkListElement implements Serializable
     buff.append("p: " + portNumber + " <==> ");
     buff.append("p: " + pe.getIB_RemotePortElement().getNumber() + " ");
     buff.append("\"" + pe.getIB_RemoteNodeElement().getName() + "\" " );
+    return buff.toString();
+  }
+
+  /************************************************************
+   * Method Name:
+   *  toLinkString
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param delimiter
+   * @return
+   ***********************************************************/
+  public String toLinkString(String delimiter)
+  {
+    StringBuffer buff = new StringBuffer();
+    // return the port element that matches this port number
+    for(IB_PortElement pe: PortElements)
+    {
+      buff.append(pe.toPortString(getName(), delimiter));
+      buff.append(SystemConstants.NEW_LINE);
+    }
     return buff.toString();
   }
 
