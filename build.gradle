@@ -36,6 +36,7 @@ repositories {
         dirs '../curses-java-api/build/distributions/'
         dirs '../ldapotp-java-api/build/dist/lib'
         dirs '../ldapotp-java-api/build/dist/'
+        dirs '../lc-jcommon/build/distributions/'
         dirs userJarRepo + '/gitOmsJars/'
    }
 }
@@ -49,6 +50,7 @@ dependencies {
     compile name: 'JLdapOtpInterface-2.02'
     compile name: 'commons-cli'
     compile name: 'commons-collections-3.2.1'
+    compile name: 'gson-2.8.5'
     compile name: 'guava-18.0'
     compile name: 'javassist'
     compile name: 'reflections-0.9.9-RC1'
