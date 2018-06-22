@@ -2,8 +2,8 @@
 %define osm_config_dir etc/opensm-plugin
 
 Name:           	opensm-client-server-java
-Version:        	2.05
-Release:        	79%{?dist}
+Version:        	2.06
+Release:        	81%{?dist}
 Summary:        	Java Client and Server library for OpenSM
 
 Group:          	Development/Libraries
@@ -66,6 +66,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_javadir}/%{java_package_name}/bin/*
 
 %changelog
+* Fri Jun 22 2018 Tim Meier <meier3@llnl.gov> 2.06-81
+- version 2.06 release 81, json fabric checking
 * Wed Jun 6 2018 Tim Meier <meier3@llnl.gov> 2.05-79
 - version 2.05 release 79, includes initial JSON support
 * Tue Jan 23 2018 Tim Meier <meier3@llnl.gov> 2.04-77
