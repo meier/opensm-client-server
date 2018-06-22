@@ -65,13 +65,16 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**********************************************************************
- * Describe purpose and responsibility of IB_PortElement
+ * The IB_PortElement represents a nodes link from its port.  A node
+ * can be a switch (many) or a channel adapter (1 or 2).  The parent of
+ * an IB_PortElement is an IB_LinkListElement.  Since this actually
+ * represents a Link, it contains information about the remote side.
  * <p>
  * @see  related classes and interfaces
  *
  * @author meier3
  * 
- * @version Nov 17, 2014 10:04:13 AM
+ * @version Nov 17, 2014 9:39:35 AM
  **********************************************************************/
 public class IB_PortElement implements Serializable
 {

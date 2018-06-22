@@ -48,9 +48,9 @@
  * National Security, LLC, and shall not be used for advertising or product
  * endorsement purposes.
  *
- *        file: OMS_AuthorizationProperties.java
+ *        file: OsmProperties.java
  *
- *  Created on: Jun 20, 2011
+ *  Created on: Jun 20, 2018
  *      Author: meier3
  ********************************************************************/
 package gov.llnl.lc.infiniband.opensm.plugin;

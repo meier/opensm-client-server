@@ -57,11 +57,17 @@ package gov.llnl.lc.infiniband.opensm.json;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import gov.llnl.lc.infiniband.core.IB_Guid;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Fabric;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Node;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Port;
+import gov.llnl.lc.infiniband.opensm.xml.IB_LinkListElement;
+import gov.llnl.lc.infiniband.opensm.xml.IB_PortElement;
+import gov.llnl.lc.logging.CommonLogger;
 import gov.llnl.lc.util.BinList;
 import gov.llnl.lc.util.SystemConstants;
 
@@ -74,8 +80,9 @@ import gov.llnl.lc.util.SystemConstants;
  * 
  * @version May 31, 2018 1:35:37 PM
  **********************************************************************/
-public class IB_CaJson implements Serializable, gov.llnl.lc.logging.CommonLogger
+public class IB_CaJson implements Serializable, CommonLogger, Comparable<IB_CaJson>
 {
+  @Deprecated
   /**  describe serialVersionUID here **/
   private static final long serialVersionUID = 366212460937925310L;
   
@@ -122,6 +129,53 @@ public class IB_CaJson implements Serializable, gov.llnl.lc.logging.CommonLogger
 
   /************************************************************
    * Method Name:
+   *  IB_CaJson
+  **/
+  /**
+   * Describe the constructor here
+   *
+   * @see     describe related java objects
+   *
+   * @param lle
+   ***********************************************************/
+  public IB_CaJson(IB_LinkListElement lle)
+  {
+    // used by the constructor with IB_FabricConf XML object
+    super();
+    name  = lle.getName();
+    speed = lle.getSpeed();
+    width = lle.getWidth();
+    
+    addPorts(lle);
+  }
+
+  /************************************************************
+   * Method Name:
+   *  IB_CaJson
+  **/
+  /**
+   * Describe the constructor here
+   *
+   * @see     describe related java objects
+   *
+   * @param lle
+   ***********************************************************/
+  public IB_CaJson(IB_PortElement p)
+  {
+    // this is for adding a RemoteNode element and port from a link
+    super();
+    name  = p.getIB_RemoteNodeElement().getName().trim();
+    speed = p.getSpeed();
+    width = p.getWidth();
+    
+    // by definition, just a single port for this constructor
+    IB_PortJson[] newPorts = new IB_PortJson[1];
+    newPorts[0] = new IB_PortJson(p);
+    setPorts(newPorts);
+  }
+
+   /************************************************************
+   * Method Name:
    *  determinSpeedAndWidth
   **/
   /**
@@ -142,8 +196,10 @@ public class IB_CaJson implements Serializable, gov.llnl.lc.logging.CommonLogger
     {
       if(p!= null)
       {
-        spbL.add(p, p.getSpeed());
-        wdbL.add(p, p.getWidth());
+        if(p.getSpeed() != null)
+          spbL.add(p, p.getSpeed());
+        if(p.getWidth() != null)
+          wdbL.add(p, p.getWidth());
       }
     }
     
@@ -194,6 +250,36 @@ public class IB_CaJson implements Serializable, gov.llnl.lc.logging.CommonLogger
       
       setPorts(newPorts);
     }
+  }
+
+  /************************************************************
+   * Method Name:
+   *  addPorts
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param lle
+   ***********************************************************/
+  private void addPorts(IB_LinkListElement lle)
+  {
+    ArrayList<IB_PortElement> portElements = lle.getPortElements();
+
+    // used by the constructor with IB_FabricConf XML object
+    if((portElements != null) && !portElements.isEmpty())
+    {
+      IB_PortJson[] newPorts = new IB_PortJson[portElements.size()];
+      int ndex = 0;
+      for(IB_PortElement pe: portElements)
+      {
+        newPorts[ndex] = new IB_PortJson(pe);
+        ndex++;
+      }
+      setPorts(newPorts);
+    }
+    
   }
 
   /************************************************************
@@ -273,7 +359,7 @@ public class IB_CaJson implements Serializable, gov.llnl.lc.logging.CommonLogger
    * @return
    ***********************************************************/
   
-  public String toJsonString(boolean pretty, boolean concise, IB_FabricJson ib_FabricJson)
+  public String toJsonString(boolean pretty, boolean concise, IB_FabricJson1 ib_FabricJson)
   {
     // if pretty, then name/value pair on each line
     // if concise, then only print children nvp if different than parents
@@ -395,7 +481,7 @@ public class IB_CaJson implements Serializable, gov.llnl.lc.logging.CommonLogger
    * @param delimiter
    * @return
    ***********************************************************/
-  public String toLinkString(IB_FabricJson parent, String delimiter)
+  public String toLinkString(IB_FabricJson1 parent, String delimiter)
   {
     // mimics the behavior of "ibparsefabricconf -d"delim""
     //
@@ -436,7 +522,228 @@ public class IB_CaJson implements Serializable, gov.llnl.lc.logging.CommonLogger
       setWidth(parentWidth);
 
     // use this nodes speed and width, if the port isn't specified
-    for(IB_PortJson p: ports)
-      p.setChildSpeedAndWidth(getSpeed(), getWidth());
+    if((ports != null) && (ports.length > 0))
+      for(IB_PortJson p: ports)
+        p.setChildSpeedAndWidth(getSpeed(), getWidth());
+    else
+      logger.warning("Null ports array when attempting to set speed and width");
+      
   }
+
+  /************************************************************
+   * Method Name:
+   *  toXmlString
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param concise
+   * @param ib_FabricJson
+   * @return
+   ***********************************************************/
+  public String toXmlString(boolean concise, IB_FabricJson1 ib_FabricJson)
+  {
+    // if concise, then only print children nvp if different than parents
+    StringBuffer buff = new StringBuffer();
+
+    // this is basically printing out the XML document, but using the Java Objects
+    String indent = IB_FabricJson1.getIndent(1);
+    String elementName = "linklist";
+    buff.append(indent);
+    buff.append("<" + elementName + " name=\""+ name + "\"");
+
+    // add speed and width if !concise or if different than node
+    if((!concise) || !(speed.equalsIgnoreCase(ib_FabricJson.getSpeed())) || !(width.equalsIgnoreCase(ib_FabricJson.getWidth())))
+      buff.append(" speed=\"" + speed + "\" width=\"" + width + "\"");
+ 
+    buff.append(">");
+    buff.append(SystemConstants.NEW_LINE);
+    // this is basically printing out the XML document, but using the Java Objects
+    for (IB_PortJson port: ports)
+      buff.append(port.toXmlString(concise, this));
+
+    buff.append(indent);
+    buff.append("</" + elementName + ">");
+    buff.append(SystemConstants.NEW_LINE);
+    return buff.toString();
+  }
+
+  /************************************************************
+   * Method Name:
+   *  compareTo
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see java.lang.Comparable#compareTo(java.lang.Object)
+   *
+   * @param o
+   * @return
+   ***********************************************************/
+  
+  @Override
+  public int compareTo(IB_CaJson o)
+  {
+    // both objects must exist (and of the same class)
+    // and should be consistent with equals
+    //
+    // -1 if less than
+    // 0 if the same
+    // 1 if greater than
+    //
+    if(o == null)
+        return -1;
+    
+    // only equal if everything is the same, otherwise return 1
+    if((this.getName().equalsIgnoreCase(o.getName())) &&
+       (this.getSpeed().equalsIgnoreCase(o.getSpeed())) &&
+       (this.getWidth().equalsIgnoreCase(o.getWidth())) &&
+       (this.comparePorts(o) == 0))
+      return 0;
+     
+    return 1;
+  }
+  
+  /************************************************************
+   * Method Name:
+   *  comparePorts
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param o
+   * @return
+   ***********************************************************/
+  private int comparePorts(IB_CaJson o)
+  {
+    // both objects must exist (and of the same class)
+    // and should be consistent with equals
+    //
+    // -1 if less than
+    // 0 if the same
+    // 1 if greater than
+    //
+    if(o == null)
+      return -1;
+    
+    int diff = this.getPorts().length - o.getPorts().length;
+  
+    if(diff != 0)
+      return diff;
+    
+    // they are exactly the same size, so find the matching port number, and compare it
+    // FIXME - can I assume all portnumbers are distinct and valid? (don't need to be in same order)
+    for( IB_PortJson myPort: getPorts())
+    {
+      for( IB_PortJson otherPort: o.getPorts())
+      {
+        // only compare the corresponding port
+        if(otherPort.getNum() != myPort.getNum())
+          continue;
+        
+        // matching portnum, so check if everything else matches
+        if(!myPort.equals(otherPort))
+          return 1;
+      }
+    }
+    // If here, arrays compared favorably
+    return 0;
+  }
+
+  /************************************************************
+   * Method Name:
+   *  equals
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see java.lang.Object#equals(java.lang.Object)
+   *
+   * @param obj
+   * @return
+   ***********************************************************/
+  
+  @Override
+  public boolean equals(Object obj)
+  {
+    return ((obj != null) && (obj instanceof IB_CaJson) && (this.compareTo((IB_CaJson)obj)==0));
+  }
+
+  /************************************************************
+   * Method Name:
+   *  getDifferenceReport
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param myNode
+   * @param ib_FabricJson
+   * @param otherNode
+   * @param currentFabric
+   * @return
+   ***********************************************************/
+  public static String getDifferenceReport(IB_CaJson myNode, IB_FabricJson1 myFabric,
+      IB_CaJson otherNode, IB_FabricJson1 currentFabric)
+  {
+    StringBuffer buff = new StringBuffer();
+
+    Set<IB_PortJson> expectedButNotFound = new HashSet<IB_PortJson>();
+    Set<IB_PortJson> foundButNotExpected = new HashSet<IB_PortJson>();
+    ArrayList<IB_PortJson> portList = new ArrayList<IB_PortJson>( Arrays.asList(otherNode.getPorts()));
+    
+    // start with a full set, then remove
+    foundButNotExpected.addAll(portList);
+
+    // matching node names, so check if everything else matches
+    if (!myNode.equals(otherNode))
+    {
+      buff.append("\nDifferences for Node: " + myNode.getName() + "\n");
+      // assume "this" is the baseline, and the "current" is the question
+
+      // iterate through my ports, and find the correct one to compare it with
+      for (IB_PortJson myPort : myNode.getPorts())
+      {
+        boolean numMatch = false;
+        for (IB_PortJson otherPort : otherNode.getPorts())
+        {
+          // only compare the corresponding port
+          if (myPort.getNum() != otherPort.getNum())
+            continue;
+
+          foundButNotExpected.remove(otherPort); // found a match, so this is not "not expected"
+          numMatch = true;
+
+          // matching node names, so check if everything else matches
+          if (!myPort.equals(otherPort))
+            buff.append(IB_PortJson.getDifferenceReport(myPort, myNode, myFabric, otherPort, otherNode, currentFabric));
+        }
+
+        if (!numMatch)
+          expectedButNotFound.add(myPort);
+      }
+
+      // show all the un-expected things, if any
+      if (!expectedButNotFound.isEmpty())
+      {
+        buff.append("  Missing Ports of Node: " + myNode.getName()  + ", (" + expectedButNotFound.size() + " missing)\n");
+        for (IB_PortJson myPort : expectedButNotFound)
+          buff.append("  " + myPort.toJsonString(false, false, myNode) + "\n");
+      }
+
+      if (!foundButNotExpected.isEmpty())
+      {
+        buff.append("  Extra or unexpected Ports of Node: " + otherNode.getName() + ", (" + foundButNotExpected.size() + " extra)\n");
+        for (IB_PortJson otherPort : foundButNotExpected)
+          buff.append("  " + otherPort.toJsonString(false, false, otherNode) + "\n");
+      }
+    }
+    return buff.toString();
+  }
+
 }

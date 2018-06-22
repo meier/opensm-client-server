@@ -58,7 +58,10 @@ package gov.llnl.lc.infiniband.opensm.json;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import gov.llnl.lc.infiniband.core.IB_Link;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Fabric;
+import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_LinkSpeed;
+import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_LinkWidth;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Node;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Port;
 import gov.llnl.lc.infiniband.opensm.xml.IB_LinkListElement;
@@ -83,9 +86,11 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
   private String name;
   private String width;
   private String speed;
-  private int level;
   private IB_PortJson1 localPort;
   private IB_PortJson1 remotePort;
+  private int num;
+  private int r_port;
+  private String r_node;
 
   /************************************************************
    * Method Name:
@@ -99,7 +104,42 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
    ***********************************************************/
   public IB_LinkJson()
   {
-    // TODO Auto-generated constructor stub
+  }
+
+  public IB_LinkJson(String name, int num, String r_node, int r_port, String speed, String width)
+  {
+    this.name   = name;
+    this.num    = num;
+    this.r_node = r_node;
+    this.r_port = r_port;
+    this.speed  = speed;
+    this.width  = width;
+    
+    // create local and remote ports, and set them
+    localPort  = new IB_PortJson1(num, width, speed, name);
+    remotePort = new IB_PortJson1(r_port, width, speed, r_node);
+  }
+
+  /************************************************************
+   * Method Name:
+   *  IB_LinkJson
+  **/
+  /**
+   * Describe the constructor here
+   *
+   * @see     describe related java objects
+   *
+   * @param lle
+   ***********************************************************/
+  public IB_LinkJson(IB_Link link, OSM_Fabric fabric, String name)
+  {
+    // used by the constructor with IB_FabricConf XML object
+    super();
+    this.name  = name;
+    speed = OSM_LinkSpeed.get(link.Endpoint1).getSpeedName();
+    width = OSM_LinkWidth.get(link.Endpoint1).getWidthName();
+    
+    addPorts(link, fabric);
   }
 
   /************************************************************
@@ -118,8 +158,8 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
     // used by the constructor with IB_FabricConf XML object
     super();
     name  = lle.getName();
-    speed = lle.getSpeed();
-    width = lle.getWidth();
+    speed = pe.getSpeed();
+    width = pe.getWidth();
     
     addPorts(name, pe);
   }
@@ -138,9 +178,7 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
    ***********************************************************/
   private void determinSpeedAndWidth()
   {
-    // DEPENDS on the ports Array, look through that, and get the
-    // dominant speed and width
-    
+    // no need, both ports should agree
   }
 
   /************************************************************
@@ -195,6 +233,23 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
   {
     localPort  = new IB_PortJson1(Integer.parseInt(pe.getNumber()), pe.getWidth(), pe.getSpeed(), name);
     remotePort = new IB_PortJson1(Integer.parseInt(pe.getIB_RemotePortElement().getNumber()), pe.getWidth(), pe.getSpeed(), pe.getIB_RemoteNodeElement().getName());
+  }
+
+  /************************************************************
+   * Method Name:
+   *  addPorts
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param lle
+   ***********************************************************/
+  private void addPorts(IB_Link link, OSM_Fabric fabric)
+  {
+    localPort   = new IB_PortJson1(link.getEndpoint1(), fabric);
+    remotePort  = new IB_PortJson1(link.getEndpoint2(), fabric);
   }
 
   /************************************************************
@@ -254,6 +309,21 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
   {
     return remotePort;
   }
+  
+  public int getNum()
+  {
+    return num;
+  }
+
+  public int getR_port()
+  {
+    return r_port;
+  }
+
+  public String getR_node()
+  {
+    return r_node;
+  }
 
   /************************************************************
    * Method Name:
@@ -268,25 +338,35 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
    * @return
    ***********************************************************/
   
-  public String toJsonString(boolean pretty, boolean concise, IB_LinkListJson ib_LinkListJson)
+  public String toJsonString(boolean pretty, boolean concise, IB_LinkListJson parent)
   {
     // if pretty, then name/value pair on each line
     // if concise, then only print children nvp if different than parents
     
     StringBuffer buff = new StringBuffer();
-    String indent  = "    ";
+    String indent  = "        ";
     String padding = "  ";
     
     String prettyNL   = pretty ? "\n" + indent + padding: "";
     String continueNL = pretty ? ",\n" + indent + padding: ", ";
-    
-    String widthString = concise && ib_LinkListJson.getWidth().equalsIgnoreCase(getWidth()) ? "": "\"width\": \"" + width + "\"";
-    String speedString = concise && ib_LinkListJson.getSpeed().equalsIgnoreCase(getSpeed()) ? "": "\"speed\": \"" + speed + "\"";
-    
-    // add the elements
-    buff.append("\n" + indent + "{ ");
+
+    buff.append(padding + "{ ");
     buff.append(prettyNL);
-    buff.append("\"name\": \"" + name + "\"");
+    
+    // only add this speed and width if different than the LinkList speed and width
+    
+    String nameString  = concise && parent.getName().equalsIgnoreCase(this.getName()) ? "": "\"name\": \"" + this.getName() + "\"";
+    String widthString = concise && parent.getWidth().equalsIgnoreCase(this.getWidth()) ? "": "\"width\": \"" + this.getWidth() + "\"";
+    String speedString = concise && parent.getSpeed().equalsIgnoreCase(this.getSpeed()) ? "": "\"speed\": \"" + this.getSpeed() + "\"";
+        
+    // add the elements
+    if(nameString.length() > 0)
+    {
+      buff.append(nameString);
+      buff.append(continueNL );
+    }
+
+    buff.append("\"num\": " + getLocalPort().getNum());
 
     if(widthString.length() > 0)
     {
@@ -299,15 +379,17 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
       buff.append(continueNL );
       buff.append(speedString);
     }
+  
+    buff.append(continueNL );
+    buff.append("\"r_port\": " + getRemotePort().getNum());
     
-    // always start ports on a new line
-    buff.append(",\n" + indent + padding);
-    buff.append(toPortsJsonString(pretty, concise));
+    buff.append(continueNL );
+    buff.append("\"r_node\": \"" + getRemotePort().getName() + "\"");
     
-    // done with ports
     if(pretty)
       buff.append("\n" + indent);
-    buff.append("}");
+    buff.append("}");    
+  
     return buff.toString();
   }
 
@@ -328,39 +410,6 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
 
   /************************************************************
    * Method Name:
-   *  toPortsJsonString
-  **/
-  /**
-   * Describe the method here
-   *
-   * @see     describe related java objects
-   *
-   * @param pretty
-   * @param concise
-   * @param ib_FabricJson 
-   * @return
-   ***********************************************************/
-  private String toPortsJsonString(boolean pretty, boolean concise)
-  {
-    // if pretty, then name/value pair on each line
-    // if concise, then only print children nvp if different than parents
-    boolean initial = true;
-    StringBuffer buff = new StringBuffer();
-    String indent  = "    ";
-    String padding = "  ";
-    
-    buff.append("\"ports\": [");
-    
-    
-    if(pretty)
-      buff.append("\n" + indent + padding);
-    buff.append("]");
-    
-    return buff.toString();
-  }
-
-  /************************************************************
-   * Method Name:
    *  toLinkString
   **/
   /**
@@ -371,7 +420,7 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
    * @param delimiter
    * @return
    ***********************************************************/
-  public String toLinkString(IB_LinkListJson parent, String delimiter)
+  public String toLinkString(String delimiter)
   {
     // mimics the behavior of "ibparsefabricconf -d"delim""
     //
@@ -448,25 +497,47 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
     StringBuffer buff = new StringBuffer();
 
     // this is basically printing out the XML document, but using the Java Objects
-    String indent = IB_FabricJson.getIndent(1);
-    String elementName = "linklist";
+    String indent = IB_FabricJson.getIndent(2);
+    String elementName = "port";
     buff.append(indent);
-    buff.append("<" + elementName + " name=\""+ name + "\"");
-
+    buff.append("<" + elementName + " num=\"" + localPort.getNum() + "\"");
+    
     // add speed and width if !concise or if different than node
     if((!concise) || !(speed.equalsIgnoreCase(ib_LinkListJson.getSpeed())) || !(width.equalsIgnoreCase(ib_LinkListJson.getWidth())))
       buff.append(" speed=\"" + speed + "\" width=\"" + width + "\"");
- 
+    
     buff.append(">");
-    buff.append(SystemConstants.NEW_LINE);
-//    // this is basically printing out the XML document, but using the Java Objects
-//    for (IB_PortJson port: ports)
-//      buff.append(port.toXmlString(concise, this));
-
-    buff.append(indent);
+    // add the other end
+    buff.append("<r_port>" + remotePort.getNum() + "</r_port><r_node>" + remotePort.getName() + "</r_node>");
     buff.append("</" + elementName + ">");
     buff.append(SystemConstants.NEW_LINE);
+    
     return buff.toString();
+  }
+
+  public void setLocalPort(IB_PortJson1 localPort)
+  {
+    this.localPort = localPort;
+  }
+
+  public void setRemotePort(IB_PortJson1 remotePort)
+  {
+    this.remotePort = remotePort;
+  }
+
+  public void setNum(int num)
+  {
+    this.num = num;
+  }
+
+  public void setR_port(int r_port)
+  {
+    this.r_port = r_port;
+  }
+
+  public void setR_node(String r_node)
+  {
+    this.r_node = r_node;
   }
 
   /************************************************************
@@ -495,13 +566,17 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
     if(o == null)
         return -1;
     
-    // only equal if everything is the same, otherwise return 1
-    if((this.getName().equalsIgnoreCase(o.getName())) &&
-       (this.getSpeed().equalsIgnoreCase(o.getSpeed())) &&
+     // only equal if everything is the same, otherwise return 1
+    if((this.getSpeed().equalsIgnoreCase(o.getSpeed())) &&
        (this.getWidth().equalsIgnoreCase(o.getWidth())) &&
        (this.comparePorts(o) == 0))
       return 0;
-     
+    
+    // return -1 if local port is less than other port (and names are same)
+    if(this.getName().equals(o.getName())) 
+      if(this.getLocalPort().getNum() < o.getLocalPort().getNum())
+        return -1;
+
     return 1;
   }
   
@@ -529,15 +604,54 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
     if(o == null)
       return -1;
     
+    // this is a link, insensitive to remote/local designation.  Same if ports are reversed too
+    
     if((localPort == null) || (remotePort == null) || (o.getLocalPort() == null) || (o.getRemotePort() == null))
       return -1;
     
-    // return true if remote and local match, even if reversed
+    // return 0 if remote and local match, even if reversed
     if(localPort.equals(o.getLocalPort()) && remotePort.equals(o.getRemotePort()))
-      return 0;
+      return comparePortAttribs(this);
     
     if(localPort.equals(o.getRemotePort()) && remotePort.equals(o.getLocalPort()))
-      return 0;
+      return comparePortAttribs(this);
+
+    return 1;
+  }
+
+  /************************************************************
+   * Method Name:
+   *  comparePorts
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param o
+   * @return
+   ***********************************************************/
+  private int comparePortAttribs(IB_LinkJson o)
+  {
+    // both objects must exist (and of the same class)
+    // and should be consistent with equals
+    //
+    // -1 if less than
+    // 0 if the same
+    // 1 if greater than
+    //
+    if(o == null)
+      return -1;
+    
+    // this is a link, insensitive to remote/local designation.  Same if ports are reversed too
+    
+    if((localPort == null) || (o.getLocalPort() == null))
+      return -1;
+    
+    // return 0 if remote and local speeds and width
+      if( (o.getLocalPort().getSpeed().equalsIgnoreCase(localPort.getSpeed())) &&
+          (o.getLocalPort().getWidth().equalsIgnoreCase(localPort.getWidth())))
+         return 0;
 
     return 1;
   }
@@ -559,6 +673,56 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
   public boolean equals(Object obj)
   {
     return ((obj != null) && (obj instanceof IB_LinkJson) && (this.compareTo((IB_LinkJson)obj)==0));
+  }
+
+  /************************************************************
+   * Method Name:
+   *  hasHostName
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param hostName
+   * @return
+   ***********************************************************/
+  public boolean hasHostName(String hostName)
+  {
+    // return true if this host is at either end of the link
+    if((localPort.getName() == null) || (remotePort.getName() == null))
+      return false;
+
+    if(localPort.getName().equals(hostName) || remotePort.getName().equals(hostName))
+      return true;
+    return false;
+  }
+
+  /************************************************************
+   * Method Name:
+   *  hasCommonEndpoint
+  **/
+  /**
+   * Return true, if the local or remote port is the same as one
+   * of the ports of this link.
+   *
+   * @see     describe related java objects
+   *
+   * @param ol
+   * @return
+   ***********************************************************/
+  public boolean hasCommonEndpoint(IB_LinkJson ol)
+  {
+    // links have unique endpoints, so if two links share the same endpoint
+    // that could be an indication of a problem
+    
+    if(localPort.isSameEndpoint(ol.getLocalPort()) ||
+        localPort.isSameEndpoint(ol.getRemotePort()) ||
+        remotePort.isSameEndpoint(ol.getLocalPort()) ||
+        remotePort.isSameEndpoint(ol.getRemotePort()))
+      return true;
+    
+    return false;
   }
 
 

@@ -60,6 +60,9 @@ import java.io.Serializable;
 import gov.llnl.lc.infiniband.core.IB_Guid;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Fabric;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Port;
+import gov.llnl.lc.infiniband.opensm.xml.IB_PortElement;
+import gov.llnl.lc.logging.CommonLogger;
+import gov.llnl.lc.util.SystemConstants;
 
 /**********************************************************************
  * Describe purpose and responsibility of IB_PortJson
@@ -70,8 +73,9 @@ import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Port;
  * 
  * @version May 31, 2018 1:31:13 PM
  **********************************************************************/
-public class IB_PortJson implements Serializable, gov.llnl.lc.logging.CommonLogger
+public class IB_PortJson implements Serializable, CommonLogger, Comparable<IB_PortJson>
 {
+  @Deprecated
   /**  describe serialVersionUID here **/
   private static final long serialVersionUID = -2750711243008670899L;
 
@@ -119,6 +123,29 @@ public class IB_PortJson implements Serializable, gov.llnl.lc.logging.CommonLogg
     
     r_port = p.sbnPort.linked_port_num;
     r_node = fabric.getNameFromGuid(new IB_Guid(p.sbnPort.linked_node_guid));
+  }
+
+  /************************************************************
+   * Method Name:
+   *  IB_PortJson
+  **/
+  /**
+   * Describe the constructor here
+   *
+   * @see     describe related java objects
+   *
+   * @param pe
+   ***********************************************************/
+  public IB_PortJson(IB_PortElement pe)
+  {
+    // used by the constructor with IB_FabricConf XML object
+    super();
+    num  = Integer.parseInt(pe.getNumber());
+    speed = pe.getSpeed();
+    width = pe.getWidth();
+    
+    r_port = Integer.parseInt(pe.getIB_RemotePortElement().getNumber());
+    r_node = pe.getIB_RemoteNodeElement().getName();
   }
 
   /************************************************************
@@ -217,7 +244,6 @@ public class IB_PortJson implements Serializable, gov.llnl.lc.logging.CommonLogg
   {
     // if pretty, then name/value pair on each line
     // if concise, then only print children nvp if different than parents
-    
     
     StringBuffer buff = new StringBuffer();
     String indent  = "        ";
@@ -342,4 +368,127 @@ public class IB_PortJson implements Serializable, gov.llnl.lc.logging.CommonLogg
       setWidth(parentWidth);
     
   }
+
+  /************************************************************
+   * Method Name:
+   *  toXmlString
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param concise
+   * @param ib_CaJson
+   * @return
+   ***********************************************************/
+  public String toXmlString(boolean concise, IB_CaJson ib_CaJson)
+  {
+    // if concise, then only print children nvp if different than parents
+    StringBuffer buff = new StringBuffer();
+
+    // this is basically printing out the XML document, but using the Java Objects
+    String indent = IB_FabricJson1.getIndent(2);
+    String elementName = "port";
+    buff.append(indent);
+    buff.append("<" + elementName + " num=\"" + num + "\"");
+    
+    // add speed and width if !concise or if different than node
+    if((!concise) || !(speed.equalsIgnoreCase(ib_CaJson.getSpeed())) || !(width.equalsIgnoreCase(ib_CaJson.getWidth())))
+      buff.append(" speed=\"" + speed + "\" width=\"" + width + "\"");
+    
+    buff.append(">");
+    buff.append("<r_port>" + r_port + "</r_port>");
+    buff.append("<r_node>" + r_node + "</r_node>");
+    buff.append("</" + elementName + ">");
+    buff.append(SystemConstants.NEW_LINE);
+    return buff.toString();
+  }
+
+  /************************************************************
+   * Method Name:
+   *  compareTo
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see java.lang.Comparable#compareTo(java.lang.Object)
+   *
+   * @param o
+   * @return
+   ***********************************************************/
+  
+  @Override
+  public int compareTo(IB_PortJson o)
+  {
+    // both objects must exist (and of the same class)
+    // and should be consistent with equals
+    //
+    // -1 if less than
+    // 0 if the same
+    // 1 if greater than
+    //
+    if(o == null)
+        return -1;
+    
+    // only equal if everything is the same, otherwise return 1
+    if((this.getNum()   == o.getNum()) &&
+       (this.getSpeed().equalsIgnoreCase(o.getSpeed())) &&
+       (this.getWidth().equalsIgnoreCase(o.getWidth())) &&
+       (this.getR_node().equalsIgnoreCase(o.getR_node())) &&
+       (this.getR_port() == o.getR_port()))
+      return 0;
+     
+    return 1;
+  }
+  /************************************************************
+   * Method Name:
+   *  equals
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see java.lang.Object#equals(java.lang.Object)
+   *
+   * @param obj
+   * @return
+   ***********************************************************/
+  
+  @Override
+  public boolean equals(Object obj)
+  {
+    return ((obj != null) && (obj instanceof IB_PortJson) && (this.compareTo((IB_PortJson)obj)==0));
+  }
+
+  /************************************************************
+   * Method Name:
+   *  getDifferenceReport
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param myNode
+   * @param myFabric
+   * @param otherNode
+   * @param currentFabric
+   * @return
+   ***********************************************************/
+  public static String getDifferenceReport(IB_PortJson myPort, IB_CaJson myNode, IB_FabricJson1 myFabric,
+      IB_PortJson otherPort, IB_CaJson otherNode, IB_FabricJson1 currentFabric)
+  {
+    StringBuffer buff = new StringBuffer();
+
+      // matching node names, so check if everything else matches
+      if (!myPort.equals(otherPort))
+      {
+        // something different here, so add it to the report
+        buff.append("    current:  " + otherPort.toJsonString(false, false, otherNode) + "\n");
+        buff.append("    expected: " + myPort.toJsonString(false, false, myNode) + "\n");
+
+      }
+    return buff.toString();
+  }
+
 }

@@ -64,13 +64,14 @@ import org.w3c.dom.Node;
 
 
 /**********************************************************************
- * Describe purpose and responsibility of IB_FabricNameElement
+ * The IB_FabricNameElement has the name of the fabric, as well as all
+ * the attributes common to the fabric, such as speed and width.
  * <p>
  * @see  related classes and interfaces
  *
  * @author meier3
  * 
- * @version Nov 17, 2014 9:00:07 AM
+ * @version Nov 17, 2014 9:39:35 AM
  **********************************************************************/
 public class IB_FabricNameElement implements Serializable
 {

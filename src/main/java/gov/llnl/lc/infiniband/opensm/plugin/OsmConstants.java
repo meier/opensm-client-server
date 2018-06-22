@@ -65,4 +65,12 @@ public interface OsmConstants
   public static final String OMS_CACHE_DIR   = "cache" + System.getProperty("file.separator");
   public static final String OMS_NO_FILE     = "NO FILE";
   
+  static final String OMS_PROP_FILE_KEY          = "OmsProperties.file";
+  static final String OMS_DEFAULT_FILENAME       = "./OpenSmMonitorService.properties";
+  
+  static final String OPENSM_CONFIG_FILE_KEY     = "OpenSM.config.file";
+  static final String OPENSM_DEFAULT_CONFIG_FILE = "/etc/rdma/opensm.conf";
+  
+  static final String FABRIC_CONFIG_FILE_KEY     = "fabric_config_file";
+  static final String FABRIC_DEFAULT_CONFIG_FILE = "/etc/infiniband-diags/ibfabricconf.xml";
 }

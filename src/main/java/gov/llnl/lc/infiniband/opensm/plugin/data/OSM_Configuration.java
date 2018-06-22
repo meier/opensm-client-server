@@ -55,6 +55,7 @@
  ********************************************************************/
 package gov.llnl.lc.infiniband.opensm.plugin.data;
 
+import gov.llnl.lc.infiniband.opensm.json.IB_FabricJson;
 import gov.llnl.lc.infiniband.opensm.plugin.OsmConstants;
 import gov.llnl.lc.infiniband.opensm.plugin.net.OsmClientApi;
 import gov.llnl.lc.infiniband.opensm.plugin.net.OsmServiceManager;
@@ -111,7 +112,14 @@ public class OSM_Configuration implements Serializable, OsmConstants, CommonLogg
   {
     // one or more arguments may be null, thats okay
     nodeNameMap  = new OSM_NodeNameMap(nodeNameMapFile);
-    fabricConfig = new IB_FabricConf(ibFabricConfFile);
+    
+    // this file could be JSON or XML, try JSON first, then XML
+    IB_FabricJson json = new IB_FabricJson(ibFabricConfFile);
+   
+   if((json == null) || !json.isValid())
+     fabricConfig = new IB_FabricConf(ibFabricConfFile);
+   else
+     fabricConfig = json.toIB_FabricConf();
   }
 
   /************************************************************

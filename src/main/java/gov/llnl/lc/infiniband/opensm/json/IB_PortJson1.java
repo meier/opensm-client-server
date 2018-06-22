@@ -62,7 +62,6 @@ import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Fabric;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Port;
 import gov.llnl.lc.infiniband.opensm.xml.IB_PortElement;
 import gov.llnl.lc.logging.CommonLogger;
-import gov.llnl.lc.util.SystemConstants;
 
 /**********************************************************************
  * Describe purpose and responsibility of IB_PortJson1
@@ -118,7 +117,7 @@ public class IB_PortJson1 implements Serializable, CommonLogger, Comparable<IB_P
     this.num = num;
     this.width = width;
     this.speed = speed;
-    this.name = name;
+    this.name = name;  // my host hane
   }
 
   /************************************************************
@@ -226,57 +225,6 @@ public class IB_PortJson1 implements Serializable, CommonLogger, Comparable<IB_P
     this.name = name;
   }
 
-  /************************************************************
-   * Method Name:
-   *  toJsonString
-  **/
-  /**
-   * Describe the method here
-   *
-   * @see java.lang.Object#toString()
-   *
-   * @return
-   ***********************************************************/
-  
-  public String toJsonString(boolean pretty, boolean concise, IB_CaJson ib_CaJson)
-  {
-    // if pretty, then name/value pair on each line
-    // if concise, then only print children nvp if different than parents
-    
-    StringBuffer buff = new StringBuffer();
-    String indent  = "        ";
-    String padding = "  ";
-    
-    String prettyNL   = pretty ? "\n" + indent + padding: "";
-    String continueNL = pretty ? ",\n" + indent + padding: ", ";
-
-    buff.append(padding + "{ ");
-    
-    String widthString = concise && ib_CaJson.getWidth().equalsIgnoreCase(getWidth()) ? "": "\"width\": \"" + width + "\"";
-    String speedString = concise && ib_CaJson.getSpeed().equalsIgnoreCase(getSpeed()) ? "": "\"speed\": \"" + speed + "\"";
-        
-    // add the elements
-    buff.append(prettyNL);
-    buff.append("\"num\": " + num);
-
-    if(widthString.length() > 0)
-    {
-      buff.append(continueNL );
-      buff.append(widthString);
-    }
-  
-    if(speedString.length() > 0)
-    {
-      buff.append(continueNL );
-      buff.append(speedString);
-    }
-  
-    if(pretty)
-      buff.append("\n" + indent);
-    buff.append("}");
-    return buff.toString();
-  }
-
   public void setNum(int num)
   {
     this.num = num;
@@ -294,39 +242,6 @@ public class IB_PortJson1 implements Serializable, CommonLogger, Comparable<IB_P
 
   /************************************************************
    * Method Name:
-   *  toLinkString
-  **/
-  /**
-   * Describe the method here
-   *
-   * @see     describe related java objects
-   *
-   * @param ib_CaJson
-   * @param delimiter
-   * @return
-   ***********************************************************/
-  public String toLinkString(IB_CaJson ib_CaJson, String delimiter)
-  {
-    // mimics the behavior of "ibparsefabricconf -d"delim""
-    //
-    // instead of using the ibfabricconf.xml file, uses the data structure
-    // within IB_PortJson1
-    
-    StringBuffer buff = new StringBuffer();
-    buff.append(ib_CaJson.getName());
-    buff.append( delimiter);
-    buff.append(getNum());
-    buff.append( delimiter);
-    buff.append( delimiter);
-    buff.append( delimiter);
-    buff.append(getSpeed());
-    buff.append( delimiter);
-    buff.append(getWidth());
-    return buff.toString();
-  }
-
-  /************************************************************
-   * Method Name:
    *  setChildSpeedAndWidth
   **/
   /**
@@ -337,7 +252,7 @@ public class IB_PortJson1 implements Serializable, CommonLogger, Comparable<IB_P
    * @param speed2
    * @param width2
    ***********************************************************/
-  protected void setChildSpeedAndWidth(String parentSpeed, String parentWidth)
+  protected void setSpeedAndWidth(String parentSpeed, String parentWidth)
   {
     // the parents speed and width are supplied if the port doesn't
     // have one
@@ -348,41 +263,6 @@ public class IB_PortJson1 implements Serializable, CommonLogger, Comparable<IB_P
       setWidth(parentWidth);
     
   }
-
-  /************************************************************
-   * Method Name:
-   *  toXmlString
-  **/
-  /**
-   * Describe the method here
-   *
-   * @see     describe related java objects
-   *
-   * @param concise
-   * @param ib_CaJson
-   * @return
-   ***********************************************************/
-  public String toXmlString(boolean concise, IB_CaJson ib_CaJson)
-  {
-    // if concise, then only print children nvp if different than parents
-    StringBuffer buff = new StringBuffer();
-
-    // this is basically printing out the XML document, but using the Java Objects
-    String indent = IB_FabricJson.getIndent(2);
-    String elementName = "port";
-    buff.append(indent);
-    buff.append("<" + elementName + " num=\"" + num + "\"");
-    
-    // add speed and width if !concise or if different than node
-    if((!concise) || !(speed.equalsIgnoreCase(ib_CaJson.getSpeed())) || !(width.equalsIgnoreCase(ib_CaJson.getWidth())))
-      buff.append(" speed=\"" + speed + "\" width=\"" + width + "\"");
-    
-    buff.append(">");
-    buff.append("</" + elementName + ">");
-    buff.append(SystemConstants.NEW_LINE);
-    return buff.toString();
-  }
-
   /************************************************************
    * Method Name:
    *  compareTo
@@ -415,8 +295,25 @@ public class IB_PortJson1 implements Serializable, CommonLogger, Comparable<IB_P
        (this.getWidth().equalsIgnoreCase(o.getWidth())) &&
        (this.getName().equalsIgnoreCase(o.getName())))
       return 0;
+    
+    // return -1 if this port number is less than other one
+    if(this.getNum() < o.getNum())
+      return -1;
      
     return 1;
+  }
+  
+  public boolean isSameEndpoint(IB_PortJson1 o)
+  {
+    // compare name and num only
+    if((o == null) || (name == null) || (o.getName() == null))
+      return false;
+    
+    if((this.getNum()   == o.getNum()) &&
+        (this.getName().equalsIgnoreCase(o.getName())))
+       return true;
+
+    return false;
   }
   /************************************************************
    * Method Name:
@@ -435,37 +332,6 @@ public class IB_PortJson1 implements Serializable, CommonLogger, Comparable<IB_P
   public boolean equals(Object obj)
   {
     return ((obj != null) && (obj instanceof IB_PortJson1) && (this.compareTo((IB_PortJson1)obj)==0));
-  }
-
-  /************************************************************
-   * Method Name:
-   *  getDifferenceReport
-  **/
-  /**
-   * Describe the method here
-   *
-   * @see     describe related java objects
-   *
-   * @param myNode
-   * @param myFabric
-   * @param otherNode
-   * @param currentFabric
-   * @return
-   ***********************************************************/
-  public static String getDifferenceReport(IB_PortJson1 myPort, IB_CaJson myNode, IB_FabricJson myFabric,
-      IB_PortJson1 otherPort, IB_CaJson otherNode, IB_FabricJson currentFabric)
-  {
-    StringBuffer buff = new StringBuffer();
-
-      // matching node names, so check if everything else matches
-      if (!myPort.equals(otherPort))
-      {
-        // something different here, so add it to the report
-        buff.append("    current:  " + otherPort.toJsonString(false, false, otherNode) + "\n");
-        buff.append("    expected: " + myPort.toJsonString(false, false, myNode) + "\n");
-
-      }
-    return buff.toString();
   }
 
 }

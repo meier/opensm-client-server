@@ -55,6 +55,12 @@
  ********************************************************************/
 package gov.llnl.lc.infiniband.core;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map.Entry;
+
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_LinkRate;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_LinkSpeed;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_LinkState;
@@ -65,10 +71,6 @@ import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_PortState;
 import gov.llnl.lc.infiniband.opensm.plugin.data.SBN_Port;
 import gov.llnl.lc.logging.CommonLogger;
 import gov.llnl.lc.util.BinList;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
 
 /**********************************************************************
  * An IB_Link describes the relationship between two OSM_Ports.  Technically,
@@ -353,6 +355,17 @@ public class IB_Link  implements Serializable, CommonLogger, Comparable<IB_Link>
       if(Endpoint1.getNodeGuid().equals(guid) && Endpoint1.getPortNumber() == portNumber)
         return true;
       if(Endpoint2.getNodeGuid().equals(guid) && Endpoint2.getPortNumber() == portNumber)
+        return true;
+    }
+    return false;
+  }
+
+  public boolean contains(IB_Guid guid)
+  {
+    if(guid != null)
+    {
+      // check to see if this guid might be at either end of the link
+      if(Endpoint1.getNodeGuid().equals(guid) || Endpoint2.getNodeGuid().equals(guid))
         return true;
     }
     return false;
@@ -883,6 +896,41 @@ public class IB_Link  implements Serializable, CommonLogger, Comparable<IB_Link>
       if(la.contains(port))
         return la;
     }
+  }
+  return null;    
+  }
+  
+  /************************************************************
+   * Method Name:
+   *  getIB_Links
+  **/
+  /**
+   * Returns the all the IB_Links that contains the provided Guid.  Given a list
+   * of IB_Links, search through it and find the supplied Guid on either end
+   * of a link.  Return the all the links that contains the Guid.
+   *
+   * @param   allLinks  a list of IB_Links to use in the search.  This can be all
+   *                    the links in the fabric, or a subset.
+   * @param   guid      a node guid to find in the list of links.  This guid can be at
+   *                    either end of a link.
+   *
+   * @return  the IB_Links that contains the provided guid, or null if the
+   * guid is not found in the list of links.
+   ***********************************************************/
+  public static ArrayList<IB_Link> getIB_Links(HashMap <String, IB_Link> lMap, IB_Guid guid)
+  {
+  // given a list of IB_Links and a node guid, return all the member links
+  if((lMap != null) && (lMap.size() > 0) && (guid != null))
+  {
+    java.util.ArrayList<IB_Link> links   = new java.util.ArrayList<IB_Link>();
+
+    for (Entry<String, IB_Link> entry : lMap.entrySet())
+    {
+      IB_Link e = entry.getValue();
+      if(e.contains(guid))
+        links.add(e);
+     }
+    return links;
   }
   return null;    
   }

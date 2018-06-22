@@ -57,13 +57,16 @@ package gov.llnl.lc.infiniband.opensm.json;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 
+import gov.llnl.lc.infiniband.core.IB_Link;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Fabric;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Node;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Port;
 import gov.llnl.lc.infiniband.opensm.xml.IB_LinkListElement;
 import gov.llnl.lc.infiniband.opensm.xml.IB_PortElement;
 import gov.llnl.lc.logging.CommonLogger;
+import gov.llnl.lc.util.BinList;
 import gov.llnl.lc.util.SystemConstants;
 
 /**********************************************************************
@@ -100,6 +103,35 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
     // TODO Auto-generated constructor stub
   }
 
+  public IB_LinkListJson(IB_LinkListJson jsonObject, IB_FabricJson fab)
+  {
+    // copy constructor
+    if ((jsonObject != null) && (jsonObject.getLinks() != null)
+        && (jsonObject.getLinks().length > 0))
+    {
+      name  = jsonObject.getName();
+      
+      // if this objects speed exists, use it, otherwise use parents
+      speed = jsonObject.getSpeed() == null ? fab.getSpeed(): jsonObject.getSpeed();
+      width = jsonObject.getWidth() == null ? fab.getWidth(): jsonObject.getWidth();
+      
+      IB_LinkJson[] newLinks = new IB_LinkJson[jsonObject.getLinks().length];
+      int ndex = 0;
+      for (IB_LinkJson l : jsonObject.getLinks())
+      {
+        // if this objects speed exists, use it, otherwise use parents
+        String lspeed = l.getSpeed() == null ? speed: l.getSpeed();
+        String lwidth = l.getWidth() == null ? width: l.getWidth();
+        
+        newLinks[ndex] = new IB_LinkJson(name, l.getNum(), l.getR_node(), l.getR_port(), lspeed, lwidth);
+        ndex++;
+      }
+      setLinks(newLinks);
+    }
+    else
+      System.err.println("NULL OBJECTS in IBLLJ object");
+  }
+
   /************************************************************
    * Method Name:
    *  IB_LinkListJson
@@ -116,14 +148,33 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
     // used by the constructor with IB_FabricConf XML object
     super();
     name  = lle.getName();
-    speed = lle.getSpeed();
-    width = lle.getWidth();
+//    speed = lle.getSpeed();
+//    width = lle.getWidth();
     
     addLinks(lle);
   }
 
+  /************************************************************
+  * Method Name:
+  *  IB_LinkListJson
+ **/
+ /**
+  * Describe the constructor here
+  *
+  * @see     describe related java objects
+  *
+  * @param la
+  * @param ib_FabricJson
+  ***********************************************************/
+ public IB_LinkListJson(ArrayList<IB_Link> la, OSM_Fabric fabric, OSM_Node n)
+ {
+   super();
+   this.name = n.pfmNode.getNode_name();
+   
+   addLinks(la, fabric, n);
+ }
 
-   /************************************************************
+  /************************************************************
    * Method Name:
    *  determinSpeedAndWidth
   **/
@@ -136,10 +187,31 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
    ***********************************************************/
   private void determinSpeedAndWidth()
   {
-    // DEPENDS on the ports Array, look through that, and get the
+    // DEPENDS on the links Array, look through that, and get the
     // dominant speed and width
+    BinList <IB_LinkJson> spbL = new BinList <IB_LinkJson>();
+    BinList <IB_LinkJson> wdbL = new BinList <IB_LinkJson>();
     
-  }
+    for(IB_LinkJson l: links)
+    {
+      if(l != null)
+      {
+        if(l.getSpeed() != null)
+          spbL.add(l, l.getSpeed());
+        if(l.getWidth() != null)
+          wdbL.add(l, l.getWidth());
+      }
+    }
+    // the majority wins (unless already specified)
+    String dominantSpeed = spbL.getMaxBinKey();
+    String dominantWidth = wdbL.getMaxBinKey();
+    
+    if(dominantSpeed != null)
+      setSpeed(dominantSpeed);
+    
+    if(dominantWidth != null)
+      setWidth(dominantWidth);
+   }
 
   /************************************************************
    * Method Name:
@@ -176,9 +248,54 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
           newPorts[ndex] = p;
           ndex++;
       }
-      
       setLinks(newLinks);
     }
+  }
+
+  /************************************************************
+   * Method Name:
+   *  addLinks
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @param lle
+   ***********************************************************/
+  private void addLinks(ArrayList<IB_Link> linkArray, OSM_Fabric fabric, OSM_Node n)
+  {
+    // constructor for this node, but limit it to the links in the link Array
+    // this node may have more ports and links, but only use the ones from the
+    // link array, and in this way, avoid duplicates
+    
+    ArrayList<OSM_Port> oPorts = n.getOSM_Ports(fabric.getOsmPorts());
+    String nodeName = fabric.getNameFromGuid(n.getNodeGuid());
+
+    if((linkArray != null) && !linkArray.isEmpty())
+    {
+      IB_LinkJson[] newLinks = new IB_LinkJson[linkArray.size()];
+      int ndex = 0;
+      for(IB_Link l: linkArray)
+      {
+        for(OSM_Port p:oPorts)
+        {
+          if(p.hasRemote())  // is this port connected at the other end?
+          {
+            // does this port match either end of this link?
+            if(l.Endpoint1.equals(p))
+            {
+              // create the link with the help of this port
+              newLinks[ndex++] = new IB_LinkJson(l, fabric, nodeName);
+            }
+            else if(l.Endpoint2.equals(p))
+              System.err.println("Remote - should not happen!");
+          }
+        }
+      }
+      setLinks(newLinks);
+    }
+    
   }
 
   /************************************************************
@@ -199,16 +316,13 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
     // used by the constructor with IB_FabricConf XML object
     if((portElements != null) && !portElements.isEmpty())
     {
-      IB_PortJson[] newPorts = new IB_PortJson[portElements.size()];
+      IB_LinkJson[] newLinks = new IB_LinkJson[portElements.size()];
       int ndex = 0;
       for(IB_PortElement pe: portElements)
       {
-        newPorts[ndex] = new IB_PortJson(pe);
+        newLinks[ndex] = new IB_LinkJson(lle, pe);
         ndex++;
       }
-      IB_LinkJson[] newLinks = new IB_LinkJson[1];
-
-      
       setLinks(newLinks);
     }
     
@@ -323,9 +437,9 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
       buff.append(speedString);
     }
     
-    // always start ports on a new line
+    // always start links on a new line
     buff.append(",\n" + indent + padding);
-    buff.append(toPortsJsonString(pretty, concise));
+    buff.append(toLinksJsonString(pretty, concise));
     
     // done with ports
     if(pretty)
@@ -351,6 +465,8 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
 
   public void setLinks(IB_LinkJson[] links)
   {
+    // sort these, in order of local port number
+    Arrays.sort(links);
     this.links = links;
     
     // set the dominant speed and width
@@ -371,7 +487,7 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
    * @param ib_FabricJson 
    * @return
    ***********************************************************/
-  private String toPortsJsonString(boolean pretty, boolean concise)
+  private String toLinksJsonString(boolean pretty, boolean concise)
   {
     // if pretty, then name/value pair on each line
     // if concise, then only print children nvp if different than parents
@@ -380,7 +496,7 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
     String indent  = "    ";
     String padding = "  ";
     
-    buff.append("\"ports\": [");
+    buff.append("\"links\": [");
     
     for (IB_LinkJson link: links)
     {
@@ -413,7 +529,7 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
    * @param delimiter
    * @return
    ***********************************************************/
-  public String toLinkString(IB_FabricJson parent, String delimiter)
+  public String toLinkString(String delimiter)
   {
     // mimics the behavior of "ibparsefabricconf -d"delim""
     //
@@ -424,7 +540,7 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
     // get all of the Node info
     for(IB_LinkJson link: links)
     {
-      buff.append(link.toLinkString(this, delimiter));
+      buff.append(link.toLinkString(delimiter));
       buff.append(SystemConstants.NEW_LINE);
     }
 
@@ -481,6 +597,8 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
     StringBuffer buff = new StringBuffer();
 
     // this is basically printing out the XML document, but using the Java Objects
+    
+    // this corresponds to all the nodes in the fabric with links
     String indent = IB_FabricJson.getIndent(1);
     String elementName = "linklist";
     buff.append(indent);
@@ -528,7 +646,19 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
     if(o == null)
         return -1;
     
-    // only equal if everything is the same, otherwise return 1
+    if((this.getName() == null) || (o.getName() == null))
+      System.err.println("ILLJ - The names are null");
+    
+    if((this.getSpeed() == null) || (o.getSpeed() == null))
+      System.err.println("ILLJ - The speeds are null");
+    
+    if((this.getWidth() == null) || (o.getWidth() == null))
+      System.err.println("ILLJ - The widths are null");
+    
+    if((this.getLinks() == null) || (o.getLinks() == null))
+      System.err.println("ILLJ - The links are null");
+    
+     // only equal if everything is the same, otherwise return 1
     if((this.getName().equalsIgnoreCase(o.getName())) &&
        (this.getSpeed().equalsIgnoreCase(o.getSpeed())) &&
        (this.getWidth().equalsIgnoreCase(o.getWidth())) &&

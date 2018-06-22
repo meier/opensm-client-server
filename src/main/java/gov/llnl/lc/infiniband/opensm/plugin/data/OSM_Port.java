@@ -55,14 +55,14 @@
  ********************************************************************/
 package gov.llnl.lc.infiniband.opensm.plugin.data;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import gov.llnl.lc.infiniband.core.IB_Address;
 import gov.llnl.lc.infiniband.core.IB_Gid;
 import gov.llnl.lc.infiniband.core.IB_Guid;
 import gov.llnl.lc.logging.CommonLogger;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
 
 /**********************************************************************
  * An OSM_Port contains all of the information known about a port from
@@ -344,6 +344,70 @@ public class OSM_Port implements Serializable, CommonLogger, Comparable<OSM_Port
     {
       if((p.getNodeGuid() != null) && (p.getNodeGuid().equals(portGuid)))
         return p;
+    }
+    
+    return null;
+  }
+  
+  /************************************************************
+   * Method Name:
+   *  getRemoteOSM_Port
+  **/
+  /**
+   * Given a list of all the OSM_Ports that exist, this convenience
+   * method will discover and return the port at the other end of the link.
+   *
+   * @see     describe related java objects  
+   * @param   describe the parameters
+   *
+   * @return  describe the value returned
+   ***********************************************************/
+  public OSM_Port getRemoteOSM_Port(ArrayList<OSM_Port> allPortsArray)
+  {
+    if((allPortsArray == null) || (allPortsArray.size() < 1) || !hasRemote())
+      return null;
+    
+    IB_Guid rg = new IB_Guid(sbnPort.linked_node_guid);
+    
+    for(OSM_Port p: allPortsArray)
+    {
+      if((p.getPortGuid() != null) && (p.getPortGuid().equals(rg)))
+        return p;
+    }
+    
+    for(OSM_Port p: allPortsArray)
+    {
+      if((p.getNodeGuid() != null) && (p.getNodeGuid().equals(rg)))
+        return p;
+    }
+    
+    return null;
+  }
+  
+  /************************************************************
+   * Method Name:
+   *  getRemoteOSM_Node
+  **/
+  /**
+   * Given a list of all the OSM_Ports that exist, this convenience
+   * method will discover and return the port at the other end of the link.
+   *
+   * @see     describe related java objects  
+   * @param   describe the parameters
+   *
+   * @return  describe the value returned
+   ***********************************************************/
+  public OSM_Node getRemoteOSM_Node(ArrayList<OSM_Node> allNodesArray)
+  {
+    if((allNodesArray == null) || (allNodesArray.size() < 1) || !hasRemote())
+      return null;
+    
+    IB_Guid rg = new IB_Guid(sbnPort.linked_node_guid);
+    
+    for(OSM_Node n: allNodesArray)
+    {
+      if((n.getNodeGuid() != null) && (n.getNodeGuid().equals(rg)))
+        return n;
     }
     
     return null;
@@ -742,7 +806,8 @@ public class OSM_Port implements Serializable, CommonLogger, Comparable<OSM_Port
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(Object obj)
+  {
     return ((obj != null) && (obj instanceof OSM_Port) && (this.compareTo((OSM_Port)obj)==0));
   }
 

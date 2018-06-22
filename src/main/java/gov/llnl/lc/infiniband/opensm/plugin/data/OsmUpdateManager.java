@@ -55,8 +55,12 @@
  ********************************************************************/
 package gov.llnl.lc.infiniband.opensm.plugin.data;
 
+import java.util.concurrent.TimeUnit;
+
+import gov.llnl.lc.infiniband.opensm.plugin.OsmConstants;
 import gov.llnl.lc.infiniband.opensm.plugin.OsmInterface;
 import gov.llnl.lc.infiniband.opensm.plugin.OsmPluginMain;
+import gov.llnl.lc.infiniband.opensm.plugin.OsmProperties;
 import gov.llnl.lc.infiniband.opensm.plugin.event.OSM_EventStats;
 import gov.llnl.lc.infiniband.opensm.plugin.event.OsmEventManager;
 import gov.llnl.lc.infiniband.opensm.plugin.net.OsmServerStatus;
@@ -69,8 +73,6 @@ import gov.llnl.lc.net.ObjectSession;
 import gov.llnl.lc.system.hostmachine.LocalHost;
 import gov.llnl.lc.system.whatsup.WhatsUpInfo;
 import gov.llnl.lc.time.TimeStamp;
-
-import java.util.concurrent.TimeUnit;
 
 
 /**********************************************************************
@@ -110,10 +112,14 @@ public class OsmUpdateManager implements Runnable, CommonLogger
   /** small cache of previous data **/
   private static OMS_List omsHistory = null;
   
+  /** server side configuration properties **/
+  private static OsmProperties osmProps = null;
+
+  
   /** the current fabric **/
   private static OSM_Fabric osmFabric = null;
 
-  /** the current fabric **/
+  /** the expected or ideal fabric configuration **/
   private static OSM_Configuration osmConfiguration = null;
 
   /** all of the nodes from the native layer **/
@@ -299,6 +305,9 @@ public class OsmUpdateManager implements Runnable, CommonLogger
     omsHistory     = new OMS_List(2);
     nativeTestData = new OSM_TestData();
     
+    // read these props only once
+    osmProps = new OsmProperties();
+     
     // check the Thread Termination Flag, and continue if Okay
     while(Continue_Thread)
     {
@@ -476,6 +485,10 @@ public class OsmUpdateManager implements Runnable, CommonLogger
       String fabConfFileName = "/etc/infiniband-diags/ibfabricconf.xml";
       if(osmSubn != null && osmSubn.Options != null && osmSubn.Options.node_name_map_name != null)
         nodeMapFileName = osmSubn.Options.node_name_map_name;
+      
+      // get the name and location of the new fabric configuration file
+      if(osmProps != null)
+        fabConfFileName =  osmProps.getProperty(OsmConstants.FABRIC_CONFIG_FILE_KEY, OsmConstants.FABRIC_DEFAULT_CONFIG_FILE);
       
       osmConfig = new OSM_Configuration(nodeMapFileName, fabConfFileName);
 

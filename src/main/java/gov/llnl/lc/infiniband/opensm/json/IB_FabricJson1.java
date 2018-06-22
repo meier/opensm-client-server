@@ -48,7 +48,7 @@
  * National Security, LLC, and shall not be used for advertising or product
  * endorsement purposes.
  *
- *        file: IB_FabricJson.java
+ *        file: IB_FabricJson1.java
  *
  *  Created on: May 31, 2018
  *      Author: meier3
@@ -80,7 +80,7 @@ import gov.llnl.lc.util.BinList;
 import gov.llnl.lc.util.SystemConstants;
 
 /**********************************************************************
- * Describe purpose and responsibility of IB_FabricJson
+ * Describe purpose and responsibility of IB_FabricJson1
  * <p>
  * @see  related classes and interfaces
  *
@@ -88,8 +88,9 @@ import gov.llnl.lc.util.SystemConstants;
  * 
  * @version May 31, 2018 1:39:46 PM
  **********************************************************************/
-public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_FabricJson>
+public class IB_FabricJson1 implements Serializable, CommonLogger, Comparable<IB_FabricJson1>
 {
+  @Deprecated
   /**  describe serialVersionUID here **/
   private static final long serialVersionUID = -5916131949556310740L;
   
@@ -100,7 +101,7 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
   
   /************************************************************
    * Method Name:
-   *  IB_FabricJson
+   *  IB_FabricJson1
   **/
   /**
    * Describe the constructor here
@@ -108,12 +109,12 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
    * @see     describe related java objects
    *
    ***********************************************************/
-  public IB_FabricJson()
+  public IB_FabricJson1()
   {
     // TODO Auto-generated constructor stub
   }
   
-  public IB_FabricJson(String fileName)
+  public IB_FabricJson1(String fileName)
   {
     if(fileName != null)
     {
@@ -121,10 +122,10 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
       {
         BufferedReader bufferedReader = new BufferedReader(new FileReader(fileName));
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        IB_FabricJson json = gson.fromJson(bufferedReader, IB_FabricJson.class);
+        IB_FabricJson1 json = gson.fromJson(bufferedReader, IB_FabricJson1.class);
         
         // if the json document was parsed correctly, then brute force copy
-        if((json != null) && (json instanceof IB_FabricJson))
+        if((json != null) && (json instanceof IB_FabricJson1))
         {
           setName(json.getName());
           setSpeed(json.getSpeed());
@@ -143,7 +144,7 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
     }
   }
   
-  public IB_FabricJson(OSM_Fabric fabric)
+  public IB_FabricJson1(OSM_Fabric fabric)
   {
     super();
     name = fabric.getFabricName(true);
@@ -151,7 +152,7 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
     addNodes(fabric);
   }
 
-  public IB_FabricJson(IB_FabricConf fabricConf)
+  public IB_FabricJson1(IB_FabricConf fabricConf)
   {
     super();
     // these three are part of the FabricNameElement
@@ -491,7 +492,7 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
     // mimics the behavior of "ibparsefabricconf -d"delim""
     //
     // instead of using the ibfabricconf.xml file, uses the data structure
-    // within IB_FabricJson
+    // within IB_FabricJson1
     StringBuffer buff = new StringBuffer();
     
     // get all of the Node info
@@ -619,7 +620,7 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
    ***********************************************************/
   
   @Override
-  public int compareTo(IB_FabricJson o)
+  public int compareTo(IB_FabricJson1 o)
   {
     // both objects must exist (and of the same class)
     // and should be consistent with equals
@@ -652,7 +653,7 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
    * @param o
    * @return
    ***********************************************************/
-  private int compareNodes(IB_FabricJson o)
+  private int compareNodes(IB_FabricJson1 o)
   {
     // both objects must exist (and of the same class)
     // and should be consistent with equals
@@ -704,7 +705,7 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
   @Override
   public boolean equals(Object obj)
   {
-    return ((obj != null) && (obj instanceof IB_FabricJson) && (this.compareTo((IB_FabricJson)obj)==0));
+    return ((obj != null) && (obj instanceof IB_FabricJson1) && (this.compareTo((IB_FabricJson1)obj)==0));
   }
 
   /************************************************************
@@ -718,7 +719,7 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
    *
    * @param currentFabric
    ***********************************************************/
-  public String getDifferenceReport(IB_FabricJson currentFabric)
+  public String getDifferenceReport(IB_FabricJson1 currentFabric)
   {
     // before we compare, make sure all children are populated
     this.setChildSpeedAndWidth();

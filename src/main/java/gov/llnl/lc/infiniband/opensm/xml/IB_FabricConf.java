@@ -56,8 +56,6 @@
 package gov.llnl.lc.infiniband.opensm.xml;
 
 
-import gov.llnl.lc.util.SystemConstants;
-
 import java.io.Serializable;
 import java.util.HashMap;
 
@@ -68,6 +66,9 @@ import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
+import gov.llnl.lc.util.SystemConstants;
 
 /**********************************************************************
  * An object that represents the ibfabricconf.xml file.  Its structure
@@ -137,6 +138,23 @@ public class IB_FabricConf implements Serializable, gov.llnl.lc.logging.CommonLo
         logger.severe(e.getMessage());
       }      
     }
+  }
+  
+  public IB_FabricConf(InputSource is)
+  {
+    try
+    {
+      DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+      DocumentBuilder db = dbf.newDocumentBuilder();
+      Document doc = db.parse(is);
+      initFromDocument(doc);
+      calcStats();
+    }
+     catch (Exception e)
+    {
+      logger.severe("Could NOT parse InputSource");
+      logger.severe(e.getMessage());
+    }      
   }
   
   private void initFromDocument(Document doc)
@@ -216,26 +234,26 @@ public class IB_FabricConf implements Serializable, gov.llnl.lc.logging.CommonLo
     return CommentElements;
   }
 
-  public String toJsonString(int indentLevel)
-  {
-    // this is basically printing out the XML document, but using the Java Objects
-    StringBuffer buff = new StringBuffer();
-    
-    buff.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-    buff.append(SystemConstants.NEW_LINE);
-    buff.append(FabricNameElement.toXMLString(indentLevel));
-    
-    // get all of the Node or IB_LinkListElements
-    for(IB_LinkListElement lle: getNodeElements())
-    {
-      buff.append(SystemConstants.NEW_LINE);
-      buff.append(lle.toXMLString(indentLevel + 1));
-    }
-    buff.append(SystemConstants.NEW_LINE);
-    buff.append(FabricNameElement.toXMLString(indentLevel, true));
-    return buff.toString();
-  }
-
+//  public String toJsonString2(int indentLevel)
+//  {
+//    // this is basically printing out the XML document, but using the Java Objects
+//    StringBuffer buff = new StringBuffer();
+//    
+//    buff.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
+//    buff.append(SystemConstants.NEW_LINE);
+//    buff.append(FabricNameElement.toXMLString(indentLevel));
+//    
+//    // get all of the Node or IB_LinkListElements
+//    for(IB_LinkListElement lle: getNodeElements())
+//    {
+//      buff.append(SystemConstants.NEW_LINE);
+//      buff.append(lle.toXMLString(indentLevel + 1));
+//    }
+//    buff.append(SystemConstants.NEW_LINE);
+//    buff.append(FabricNameElement.toXMLString(indentLevel, true));
+//    return buff.toString();
+//  }
+//
   public String toXMLString(int indentLevel)
   {
     // this is basically printing out the XML document, but using the Java Objects
@@ -460,6 +478,7 @@ public class IB_FabricConf implements Serializable, gov.llnl.lc.logging.CommonLo
         linkMap.put(link, "value");
       }
     }
+    
     nNodes     = nodeMap.size();
     nPorts     = portMap.size();
     nDownPorts = dPortMap.size();
@@ -492,6 +511,22 @@ public class IB_FabricConf implements Serializable, gov.llnl.lc.logging.CommonLo
     // TODO remove this once synced at server end
     calcStats();  // normally this happens in the constructor, but.....
     return nLinks;
+  }
+  
+  public String getSpeed()
+  {
+    Node n = Root.getAttributes().getNamedItem("speed");
+    if(n != null)
+      return n.getNodeValue();
+    return "";
+  }
+
+  public String getWidth()
+  {
+    Node n = Root.getAttributes().getNamedItem("width");
+    if(n != null)
+      return n.getNodeValue();
+    return "";
   }
 
   /************************************************************

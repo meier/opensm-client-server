@@ -55,12 +55,13 @@
  ********************************************************************/
 package gov.llnl.lc.infiniband.opensm.plugin.data;
 
-import gov.llnl.lc.infiniband.core.IB_Guid;
-import gov.llnl.lc.logging.CommonLogger;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import gov.llnl.lc.infiniband.core.IB_Guid;
+import gov.llnl.lc.infiniband.core.IB_Link;
+import gov.llnl.lc.logging.CommonLogger;
 
 /**********************************************************************
  * Describe purpose and responsibility of OSM_Node
@@ -213,6 +214,11 @@ public class OSM_Node implements Serializable, CommonLogger, Comparable<OSM_Node
   public ArrayList<OSM_Port> getOSM_Ports(HashMap <String, OSM_Port> pMap)
   {
     return OSM_Port.getOSM_Ports(pMap, this.getNodeGuid(), this.sbnNode.num_ports);
+  }
+  
+  public ArrayList<IB_Link> getIB_Links(HashMap <String, IB_Link> lMap)
+  {
+    return IB_Link.getIB_Links(lMap, this.getNodeGuid());
   }
   
   /************************************************************
