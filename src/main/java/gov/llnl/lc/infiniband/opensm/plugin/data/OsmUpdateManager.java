@@ -451,6 +451,10 @@ public class OsmUpdateManager implements Runnable, CommonLogger
     // since this method is called much more often than the OMS will
     // change, we can skip the body most of the time, thereby providing a bit
     // of time savings.
+    //
+    // for example,if the update period is 90 seconds (typically 180), and the skip
+    // count is 3 (default), then the code below will only update once every 270
+    // seconds (or 4.5 minutes).
 
     if (OMS_UpdateSkipCount++ < OMS_UpdateSkipValue)
       return;
@@ -489,6 +493,8 @@ public class OsmUpdateManager implements Runnable, CommonLogger
       // get the name and location of the new fabric configuration file
       if(osmProps != null)
         fabConfFileName =  osmProps.getProperty(OsmConstants.FABRIC_CONFIG_FILE_KEY, OsmConstants.FABRIC_DEFAULT_CONFIG_FILE);
+      else
+        logger.warning("Did not obtain OsmProperties file using environment variable or default");
       
       osmConfig = new OSM_Configuration(nodeMapFileName, fabConfFileName);
 

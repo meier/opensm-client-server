@@ -3,7 +3,7 @@
 
 Name:           	opensm-client-server-java
 Version:        	2.06
-Release:        	81%{?dist}
+Release:        	83%{?dist}
 Summary:        	Java Client and Server library for OpenSM
 
 Group:          	Development/Libraries
@@ -66,6 +66,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_javadir}/%{java_package_name}/bin/*
 
 %changelog
+* Wed Jun 27 2018 Tim Meier <meier3@llnl.gov> 2.06-83
+- version 2.06 release 83, fixed json processing fabrics with a single switch
 * Fri Jun 22 2018 Tim Meier <meier3@llnl.gov> 2.06-81
 - version 2.06 release 81, json fabric checking
 * Wed Jun 6 2018 Tim Meier <meier3@llnl.gov> 2.05-79

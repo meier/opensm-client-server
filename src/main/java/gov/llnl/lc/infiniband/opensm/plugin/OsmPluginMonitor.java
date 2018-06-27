@@ -356,7 +356,6 @@ public class OsmPluginMonitor implements Runnable, CommonLogger, ObjectSessionLi
         globalOsmEventManager.removeSessionListener(id);
       }
     }
-    
     return true;
   }
   
@@ -367,8 +366,6 @@ public class OsmPluginMonitor implements Runnable, CommonLogger, ObjectSessionLi
       return Heartbeat;
     }
   }
-
-
   
   /************************************************************
    * Method Name:

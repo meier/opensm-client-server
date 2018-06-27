@@ -114,11 +114,14 @@ public class OSM_Configuration implements Serializable, OsmConstants, CommonLogg
     nodeNameMap  = new OSM_NodeNameMap(nodeNameMapFile);
     
     // this file could be JSON or XML, try JSON first, then XML
+    logger.info("Attempting to read " + ibFabricConfFile + " file");
     IB_FabricJson json = new IB_FabricJson(ibFabricConfFile);
    
-   if((json == null) || !json.isValid())
+    // attempt to read XML if the JSON attempt failed
+    if((json == null) || !json.isValid())
      fabricConfig = new IB_FabricConf(ibFabricConfFile);
    else
+     // JSON may have worked, convert it to old school XML for now
      fabricConfig = json.toIB_FabricConf();
   }
 

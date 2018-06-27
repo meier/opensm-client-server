@@ -123,7 +123,7 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
         String lspeed = l.getSpeed() == null ? speed: l.getSpeed();
         String lwidth = l.getWidth() == null ? width: l.getWidth();
         
-        newLinks[ndex] = new IB_LinkJson(name, l.getNum(), l.getR_node(), l.getR_port(), lspeed, lwidth);
+        newLinks[ndex] = new IB_LinkJson(l.getName(), l.getNum(), l.getR_node(), l.getR_port(), lspeed, lwidth);
         ndex++;
       }
       setLinks(newLinks);
@@ -148,9 +148,6 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
     // used by the constructor with IB_FabricConf XML object
     super();
     name  = lle.getName();
-//    speed = lle.getSpeed();
-//    width = lle.getWidth();
-    
     addLinks(lle);
   }
 
@@ -170,7 +167,6 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
  {
    super();
    this.name = n.pfmNode.getNode_name();
-   
    addLinks(la, fabric, n);
  }
 
@@ -280,7 +276,7 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
       {
         for(OSM_Port p:oPorts)
         {
-          if(p.hasRemote())  // is this port connected at the other end?
+          if(p.hasRemote() || true)  // is this port connected at the other end?
           {
             // does this port match either end of this link?
             if(l.Endpoint1.equals(p))
@@ -289,13 +285,36 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
               newLinks[ndex++] = new IB_LinkJson(l, fabric, nodeName);
             }
             else if(l.Endpoint2.equals(p))
-              System.err.println("Remote - should not happen!");
+            {
+              // this should almost never happen, except in fabrics with only a leaf switch
+              // this means the endpoints need to be swapped because the remote node names are the
+              // same as this nodes name (the constructor will reverse them)
+              newLinks[ndex++] = new IB_LinkJson(l, fabric, nodeName);
+            }
           }
         }
       }
+      // may need to resize the array, or abort if empty
+      if(ndex != linkArray.size())
+      {
+        // one or more didn't get added, so rebuild the array
+        if(ndex != 0)
+        {
+          IB_LinkJson[] nNewLinks = new IB_LinkJson[ndex];
+
+          // copy non-null objects
+          int newIndex = 0;
+          for(IB_LinkJson nl: newLinks)
+            if(nl != null)
+              nNewLinks[newIndex++] = nl;
+          
+          newLinks = nNewLinks;
+        }
+        else
+          return;
+      }
       setLinks(newLinks);
     }
-    
   }
 
   /************************************************************
@@ -466,6 +485,8 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
   public void setLinks(IB_LinkJson[] links)
   {
     // sort these, in order of local port number
+    //are there any null objects in this array?
+    
     Arrays.sort(links);
     this.links = links;
     
@@ -744,5 +765,28 @@ public class IB_LinkListJson implements Serializable, CommonLogger, Comparable<I
     return ((obj != null) && (obj instanceof IB_LinkListJson) && (this.compareTo((IB_LinkListJson)obj)==0));
   }
 
+  /************************************************************
+   * Method Name:
+   *  isValid
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @return
+   ***********************************************************/
+  public boolean isValid()
+  {
+    // only valid if it actually has a non-empty array of links
+    // also should have name and speed and width
+    if((links == null) || (links.length < 1))
+      return false;
+    
+    if((name == null) || (speed == null) || (width == null))
+      return false;
+    
+    return true;
+  }
 
 }

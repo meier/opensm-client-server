@@ -117,7 +117,7 @@ public class IB_PortJson1 implements Serializable, CommonLogger, Comparable<IB_P
     this.num = num;
     this.width = width;
     this.speed = speed;
-    this.name = name;  // my host hane
+    this.name = name;  // my hostname
   }
 
   /************************************************************
@@ -288,6 +288,16 @@ public class IB_PortJson1 implements Serializable, CommonLogger, Comparable<IB_P
     //
     if(o == null)
         return -1;
+    
+    if((this.getName() == null) || (o.getName() == null))
+      return -1;
+    
+    if((this.getSpeed() == null) || (o.getSpeed() == null))
+      return -1;
+    
+    if((this.getWidth() == null) || (o.getWidth() == null))
+      return -1;
+    
     
     // only equal if everything is the same, otherwise return 1
     if((this.getNum()   == o.getNum()) &&

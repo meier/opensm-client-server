@@ -438,7 +438,7 @@ import java.util.jar.Manifest;
           monitorMgrHB = globalMonitor.getHeartbeat();
           serverHB = (long)osmServer.numCumulativeSessions();
           
-          // check to see if things have changed
+          // check to see if the various heartbeats are running (changed)
           if(eventMgrHB == prevEventMgrHB)
             logger.warning("The number of events has not changed since the last period (" + eventMgrHB + ")" );
           if(updateMgrHB == prevUpdateMgrHB)

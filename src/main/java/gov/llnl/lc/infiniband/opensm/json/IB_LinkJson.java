@@ -56,14 +56,11 @@
 package gov.llnl.lc.infiniband.opensm.json;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 
 import gov.llnl.lc.infiniband.core.IB_Link;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Fabric;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_LinkSpeed;
 import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_LinkWidth;
-import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Node;
-import gov.llnl.lc.infiniband.opensm.plugin.data.OSM_Port;
 import gov.llnl.lc.infiniband.opensm.xml.IB_LinkListElement;
 import gov.llnl.lc.infiniband.opensm.xml.IB_PortElement;
 import gov.llnl.lc.logging.CommonLogger;
@@ -131,15 +128,29 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
    *
    * @param lle
    ***********************************************************/
-  public IB_LinkJson(IB_Link link, OSM_Fabric fabric, String name)
+  public IB_LinkJson(IB_Link link, OSM_Fabric fabric, String Name)
   {
     // used by the constructor with IB_FabricConf XML object
     super();
-    this.name  = name;
     speed = OSM_LinkSpeed.get(link.Endpoint1).getSpeedName();
     width = OSM_LinkWidth.get(link.Endpoint1).getWidthName();
     
-    addPorts(link, fabric);
+    localPort   = new IB_PortJson1(link.getEndpoint1(), fabric);
+    remotePort  = new IB_PortJson1(link.getEndpoint2(), fabric);
+    
+    // assign the endpoint with the provided name, to local port
+    if(Name.equalsIgnoreCase(remotePort.getName()))
+    {
+      // swap endpoints
+      IB_PortJson1 tmpPort = remotePort;
+      remotePort = localPort;
+      localPort  = tmpPort;
+    }
+    
+    this.name   = localPort.getName();
+    this.num    = localPort.getNum();
+    this.r_node = remotePort.getName();
+    this.r_port = remotePort.getNum();
   }
 
   /************************************************************
@@ -161,96 +172,15 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
     speed = pe.getSpeed();
     width = pe.getWidth();
     
-    addPorts(name, pe);
-  }
-
-
-   /************************************************************
-   * Method Name:
-   *  determinSpeedAndWidth
-  **/
-  /**
-   * Describe the method here
-   *
-   * @see     describe related java objects
-   *
-   * @param fabric
-   ***********************************************************/
-  private void determinSpeedAndWidth()
-  {
-    // no need, both ports should agree
-  }
-
-  /************************************************************
-   * Method Name:
-   *  addPorts
-  **/
-  /**
-   * Describe the method here
-   *
-   * @see     describe related java objects
-   *
-   * @param n
-   * @param fabric
-   ***********************************************************/
-  private void addLinks(OSM_Node n, OSM_Fabric fabric)
-  {
-    // iterate through all ports, and create an IB_PortJson for each one
-    ArrayList<OSM_Port> oPorts = n.getOSM_Ports(fabric.getOsmPorts());
-    ArrayList<IB_PortJson> portList = new ArrayList<IB_PortJson>();
-    
-    if((oPorts != null) && (!oPorts.isEmpty()))
-    {
-      for(OSM_Port p:oPorts)
-      {
-        if(p.hasRemote())  // is this port connected at the other end?
-          portList.add(new IB_PortJson(p, fabric));
-      }
-      
-      IB_PortJson[] newPorts = new IB_PortJson[portList.size()];
-      int ndex = 0;
-      for(IB_PortJson p: portList)
-      {
-          newPorts[ndex] = p;
-          ndex++;
-      }
-      
-    }
-  }
-
-  /************************************************************
-   * Method Name:
-   *  addPorts
-  **/
-  /**
-   * Describe the method here
-   *
-   * @see     describe related java objects
-   *
-   * @param lle
-   ***********************************************************/
-  private void addPorts(String name, IB_PortElement pe)
-  {
     localPort  = new IB_PortJson1(Integer.parseInt(pe.getNumber()), pe.getWidth(), pe.getSpeed(), name);
     remotePort = new IB_PortJson1(Integer.parseInt(pe.getIB_RemotePortElement().getNumber()), pe.getWidth(), pe.getSpeed(), pe.getIB_RemoteNodeElement().getName());
+
+    this.name   = localPort.getName();
+    this.num    = localPort.getNum();
+    this.r_node = remotePort.getName();
+    this.r_port = remotePort.getNum();    
   }
 
-  /************************************************************
-   * Method Name:
-   *  addPorts
-  **/
-  /**
-   * Describe the method here
-   *
-   * @see     describe related java objects
-   *
-   * @param lle
-   ***********************************************************/
-  private void addPorts(IB_Link link, OSM_Fabric fabric)
-  {
-    localPort   = new IB_PortJson1(link.getEndpoint1(), fabric);
-    remotePort  = new IB_PortJson1(link.getEndpoint2(), fabric);
-  }
 
   /************************************************************
    * Method Name:
@@ -724,6 +654,27 @@ public class IB_LinkJson implements Serializable, CommonLogger, Comparable<IB_Li
     
     return false;
   }
-
-
+  /************************************************************
+   * Method Name:
+   *  isValid
+  **/
+  /**
+   * Describe the method here
+   *
+   * @see     describe related java objects
+   *
+   * @return
+   ***********************************************************/
+  public boolean isValid()
+  {
+    // only valid if it actually has valid local and remote ports
+    // also should have name and speed and width
+    if((localPort == null) || (remotePort == null))
+      return false;
+    
+    if((name == null) || (speed == null) || (width == null) || (r_node == null))
+      return false;
+    
+    return true;
+  }
 }

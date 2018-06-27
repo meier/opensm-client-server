@@ -157,14 +157,11 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
         if ((json != null) && (json instanceof IB_FabricJson))
           this.cloneIB_FabricJson(json);
         else
-          System.err.println("Seems to be a problem of the instance??  NULL or not IB_FabricJson");
+          logger.severe("Seems to be a problem of the instance??  NULL or not IB_FabricJson");
       }
       catch (Exception e)
       {
-        e.printStackTrace();
-        logger.severe(e.getCause().toString());
-        logger.severe("Could NOT parse json IB_FabricJson file");
-        logger.severe(e.getMessage());
+        logger.severe("Could NOT parse file (" + fileName + ") as json IB_FabricJson file");
       }
     }
   }
@@ -283,9 +280,38 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
       for(IB_LinkListJson n: oNodes)
       {
         newNodes[ndex] = new IB_LinkListJson(n, this);
-        ndex++;
+        if(newNodes[ndex].isValid())
+          ndex++;
+      }
+      // may need to resize the array, or abort if empty
+      if(ndex != oNodes.length)
+      {
+        // one or more didn't get added, so rebuild the array
+        if(ndex != 0)
+        {
+          // must assume that oNodes is larger than ndex
+          IB_LinkListJson[] nNewNodes = new IB_LinkListJson[ndex];
+
+          // copy non-null objects
+          int newIndex = 0;
+          for(IB_LinkListJson nl: newNodes)
+            if((nl != null) && (nl.isValid()))
+              nNewNodes[newIndex++] = nl;
+          
+          newNodes = nNewNodes;
+        }
+        else
+        {
+          // empty?  this shouldn't happen
+          logger.severe("attempting to add " + oNodes.length + " LinkListJson Objects, but zero added");
+          return;
+        }
       }
       setNodes(newNodes);
+    }
+    else
+    {
+      logger.severe("Could not add null or empty nodes to FabricJson object");
     }
   }
 
@@ -333,7 +359,7 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
       {
         // check the node at the other end of the port to see if it is also a switch
         OSM_Node rn = p.getRemoteOSM_Node(listOfNodes);
-        if(rn.isSwitch())
+        if((rn != null) && (rn.isSwitch()))
           numRemoteSwitches++;
       }
       
@@ -361,7 +387,7 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
     // 2. leaf switches
     // 3. remainder of nodes, if any
     
-    // 1. top level
+    // 1. top level switches
     ArrayList<IB_LinkListJson> arrayOfll = new ArrayList<IB_LinkListJson>();
     for (Entry<String, OSM_Node> entry : switchNodes.entrySet())
     {
@@ -377,19 +403,23 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
         allLinks.remove(l.getIB_LinkKey());
     }
     
-    // 2. leaf level
+    // 2. leaf level switches
     for (Entry<String, OSM_Node> entry : leafSwitchNodes.entrySet())
     {
       OSM_Node e = entry.getValue();
       
       // build an IB_LinkListJson object from this node and its links
       ArrayList<IB_Link> la = e.getIB_Links(allLinks);
-      IB_LinkListJson llj = new IB_LinkListJson(la, fabric, e);
-      arrayOfll.add(llj);
       
-      // these are now accounted for, so remove them from the list of links
-      for (IB_Link l : la)
-        allLinks.remove(l.getIB_LinkKey());
+      if((la != null) && (!la.isEmpty()))
+      {
+        IB_LinkListJson llj = new IB_LinkListJson(la, fabric, e);
+        arrayOfll.add(llj);
+        
+        // these are now accounted for, so remove them from the list of links
+        for (IB_Link l : la)
+          allLinks.remove(l.getIB_LinkKey());        
+      }
     }
     
     // 3. remaining nodes, but there shouldn't be any links left
@@ -400,15 +430,8 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
       
       // handle this somehow
     }
-    
-    IB_LinkListJson[] newNodes = new IB_LinkListJson[arrayOfll.size()];
-    int ndex = 0;
-    for(IB_LinkListJson n: arrayOfll)
-    {
-      newNodes[ndex] = n;
-      ndex++;
-    }
-    setNodes(newNodes);
+    // add the results, and analyze
+    addLinkLists(arrayOfll.toArray(new IB_LinkListJson[0]));
    }
 
   /************************************************************
@@ -628,7 +651,7 @@ public class IB_FabricJson implements Serializable, CommonLogger, Comparable<IB_
     
     if(pretty)
       buff.append("\n");
-    buff.append("}");
+    buff.append("}\n");
     return buff.toString();
   }
 
